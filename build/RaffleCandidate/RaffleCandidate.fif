@@ -1,0 +1,284 @@
+"Asm.fif" include
+// automatically generated from raffle-candidate.tolk, storage.tolk, messages.tolk, constants.tolk
+PROGRAM{
+  DECLPROC RaffleStorage.load()
+  DECLPROC RaffleStorage.save()
+  DECLPROC RaffleParticipantStorage.load()
+  DECLPROC RaffleParticipantStorage.save()
+  DECLPROC calculateRaffleCandidateAddress()
+  DECLPROC calculateRaffleParticipantAddress()
+  0 DECLMETHOD onInternalMessage()
+  101383 DECLMETHOD userAddress()
+  125994 DECLMETHOD participantIndex()
+  // 2 functions inlined in-place:
+  // - RaffleCandidateStorage.load (4 calls)
+  // - RaffleCandidateStorage.save (1 call)
+  // contracts/storage.tolk:14  (note: function never called!)
+  RaffleStorage.load() PROC:<{	// 
+    // 15: return RaffleStorage.fromCell(contract.getData())
+    c4 PUSH                 	//  '0
+    CTOS                    	//  s
+    LDMSGADDR               	//  '4 s
+    64 LDU                  	//  '4 '6 s
+    LDREF                   	//  '4 '6 '7 s
+    LDREF                   	//  '4 '6 '7 '8 s
+    64 LDU                  	//  '4 '6 '7 '8 '10 s
+    ENDS                    	//  '4 '6 '7 '8 '10
+  }>
+  // contracts/storage.tolk:18  (note: function never called!)
+  RaffleStorage.save() PROC:<{	//  self.ownerAddress self.raffleID self.candidateCode self.participantCode self.participantQuantity
+    // 19: contract.setData(self.toCell())
+    s0 s4 XCHG
+    NEWC                    	//  self.participantQuantity self.raffleID self.candidateCode self.participantCode self.ownerAddress b
+    STSLICE                 	//  self.participantQuantity self.raffleID self.candidateCode self.participantCode b
+    s1 s3 XCHG              	//  self.participantQuantity self.participantCode self.candidateCode self.raffleID b
+    64 STU                  	//  self.participantQuantity self.participantCode self.candidateCode b
+    STREF                   	//  self.participantQuantity self.participantCode b
+    STREF                   	//  self.participantQuantity b
+    64 STU                  	//  b
+    ENDC                    	//  '9
+    c4 POP                  	// 
+  }>
+  // contracts/storage.tolk:46  (note: function never called!)
+  RaffleParticipantStorage.load() PROC:<{	// 
+    // 47: return RaffleParticipantStorage.fromCell(contract.getData())
+    c4 PUSH                 	//  '0
+    CTOS                    	//  s
+    LDMSGADDR               	//  '4 s
+    64 LDU                  	//  '4 '6 s
+    1 LDU                   	//  '4 '6 '9 s
+    SWAP                    	//  '4 '6 s '9
+    IF:<{                   	//  '4 '6 s
+      LDMSGADDR             	//  '4 '6 '7 s
+    }>ELSE<{                	//  '4 '6 s
+      PUSHNULL              	//  '4 '6 s '7
+      SWAP                  	//  '4 '6 '7 s
+    }>
+    ENDS                    	//  '4 '6 '7
+  }>
+  // contracts/storage.tolk:50  (note: function never called!)
+  RaffleParticipantStorage.save() PROC:<{	//  self.raffleAddress self.participantIndex self.userAddress
+    // 51: contract.setData(self.toCell())
+    s0 s2 XCHG
+    NEWC                    	//  self.userAddress self.participantIndex self.raffleAddress b
+    STSLICE                 	//  self.userAddress self.participantIndex b
+    64 STU                  	//  self.userAddress b
+    OVER                    	//  self.userAddress b self.userAddress
+    ISNULL                  	//  self.userAddress b '6
+    IF:<{                   	//  self.userAddress b
+      NIP                   	//  b
+      b{0} STSLICECONST     	//  b
+    }>ELSE<{                	//  self.userAddress b
+      b{1} STSLICECONST     	//  self.userAddress b
+      STSLICE               	//  b
+    }>
+    ENDC                    	//  '11
+    c4 POP                  	// 
+  }>
+  // contracts/storage.tolk:54  (note: function never called!)
+  calculateRaffleCandidateAddress() PROC:<{	//  raffleAddress userAddress code
+    // 55: val data: RaffleCandidateStorage = { raffleAddress, userAddress, participantIndex: null }
+    PUSHNULL                	//  data.raffleAddress data.userAddress code data.participantIndex
+    // 58: workchain: MY_WORKCHAIN
+    0 PUSHINT               	//  data.raffleAddress data.userAddress code data.participantIndex '7=0
+    // 61: data: data.toCell()
+    s0 s4 XCHG
+    NEWC                    	//  '7=0 data.userAddress code data.participantIndex data.raffleAddress b
+    STSLICE                 	//  '7=0 data.userAddress code data.participantIndex b
+    s1 s3 XCHG              	//  '7=0 data.participantIndex code data.userAddress b
+    STSLICE                 	//  '7=0 data.participantIndex code b
+    s2 PUSH                 	//  '7=0 data.participantIndex code b data.participantIndex
+    ISNULL                  	//  '7=0 data.participantIndex code b '10
+    IF:<{                   	//  '7=0 data.participantIndex code b
+      1 2 BLKDROP2          	//  '7=0 code b
+      b{0} STSLICECONST     	//  '7=0 code b
+    }>ELSE<{                	//  '7=0 data.participantIndex code b
+      b{1} STSLICECONST     	//  '7=0 data.participantIndex code b
+      s1 s2 XCHG            	//  '7=0 code data.participantIndex b
+      64 STU                	//  '7=0 code b
+    }>
+    ENDC                    	//  '7=0 code '16
+    // 59: stateInit:
+    129 PUSHINT             	//  '7=0 code '16 '17=129
+    PUSHNULL                	//  '7=0 code '16 '17=129 '18
+    PUSHNULL                	//  '7=0 code '16 '17=129 '18 '19
+    s5 PUSH                 	//  '7=0 code '16 '17=129 '18 '19 '20=0
+  }>
+  // contracts/storage.tolk:66  (note: function never called!)
+  calculateRaffleParticipantAddress() PROC:<{	//  raffleAddress participantIndex code
+    // 67: val data: RaffleParticipantStorage = { raffleAddress, participantIndex, userAddress: createAddressNone() }
+    b{00} PUSHSLICE         	//  data.raffleAddress data.participantIndex code data.userAddress
+    // 70: workchain: MY_WORKCHAIN
+    0 PUSHINT               	//  data.raffleAddress data.participantIndex code data.userAddress '7=0
+    // 73: data: data.toCell()
+    s0 s4 XCHG
+    NEWC                    	//  '7=0 data.participantIndex code data.userAddress data.raffleAddress b
+    STSLICE                 	//  '7=0 data.participantIndex code data.userAddress b
+    s1 s3 XCHG              	//  '7=0 data.userAddress code data.participantIndex b
+    64 STU                  	//  '7=0 data.userAddress code b
+    s2 PUSH                 	//  '7=0 data.userAddress code b data.userAddress
+    ISNULL                  	//  '7=0 data.userAddress code b '11
+    IF:<{                   	//  '7=0 data.userAddress code b
+      1 2 BLKDROP2          	//  '7=0 code b
+      b{0} STSLICECONST     	//  '7=0 code b
+    }>ELSE<{                	//  '7=0 data.userAddress code b
+      b{1} STSLICECONST     	//  '7=0 data.userAddress code b
+      s1 s2 XCHG            	//  '7=0 code data.userAddress b
+      STSLICE               	//  '7=0 code b
+    }>
+    ENDC                    	//  '7=0 code '16
+    // 71: stateInit:
+    129 PUSHINT             	//  '7=0 code '16 '17=129
+    PUSHNULL                	//  '7=0 code '16 '17=129 '18
+    PUSHNULL                	//  '7=0 code '16 '17=129 '18 '19
+    s5 PUSH                 	//  '7=0 code '16 '17=129 '18 '19 '20=0
+  }>
+  // contracts/raffle-candidate.tolk:9
+  onInternalMessage() PROC:<{ 	//  in.body
+    // 9: fun onInternalMessage(inMessage: InMessage)
+    INMSG_BOUNCED           	//  in.body '1
+    0 THROWIF               	//  in.body
+    // 10: reserveToncoinsOnBalance(MIN_TONS_FOR_CANDIDATE_STORAGE, RESERVE_MODE_EXACT_AMOUNT | RESERVE_MODE_BOUNCE_ON_ACTION_FAIL)
+    10000000 PUSHINT        	//  in.body '5=10000000
+    16 PUSHINT              	//  in.body '5=10000000 '8
+    RAWRESERVE              	//  in.body
+    // 12: debug.printString("onInternalMessage A")
+    x{6f6e496e7465726e616c4d6573736167652041} PUSHSLICE	//  in.body '9
+    STRDUMP DROP            	//  in.body
+    // 31: return RaffleCandidateStorage.fromCell(contract.getData())
+    c4 PUSH                 	//  in.body '14
+    // 13: var storage = lazy RaffleCandidateStorage.load()
+    CTOS                    	//  in.body lazyS
+    // 15: debug.printString("onInternalMessage B")
+    x{6f6e496e7465726e616c4d6573736167652042} PUSHSLICE	//  in.body lazyS '18
+    STRDUMP DROP            	//  in.body lazyS
+    // 16: assert (inMessage.senderAddress == storage.raffleAddress) throw 0x2000
+    LDMSGADDR               	//  in.body '19 lazyS
+    DROP                    	//  in.body storage.raffleAddress
+    13 PUSHPOW2             	//  in.body storage.raffleAddress '20=8192
+    INMSG_SRC               	//  in.body storage.raffleAddress '20=8192 '21
+    ROT                     	//  in.body '20=8192 '21 storage.raffleAddress
+    SDEQ                    	//  in.body '20=8192 '23
+    THROWANYIFNOT           	//  in.body
+    // 18: debug.printString("onInternalMessage C")
+    x{6f6e496e7465726e616c4d6573736167652043} PUSHSLICE	//  in.body '25
+    STRDUMP DROP            	//  in.body
+    // 19: val inMessageBody = lazy AllowedMessageCandidate.fromSlice(inMessage.body)
+    DUP                     	//  in.body lazyS
+    // 21: debug.printString("onInternalMessage D")
+    x{6f6e496e7465726e616c4d6573736167652044} PUSHSLICE	//  in.body lazyS '32
+    STRDUMP DROP            	//  in.body lazyS
+    // 23: match (inMessageBody)
+    x{80000001} SDBEGINSQ   	//  in.body lazyS '33
+    IFJMP:<{                	//  in.body lazyS
+      // 25: debug.printString("ApproveCandidate A")
+      NIP                   	//  lazyS
+      x{417070726f766543616e6469646174652041} PUSHSLICE	//  lazyS '36
+      STRDUMP DROP          	//  lazyS
+      // 31: return RaffleCandidateStorage.fromCell(contract.getData())
+      c4 PUSH               	//  lazyS '41
+      // 26: var storage = lazy RaffleCandidateStorage.load()
+      CTOS                  	//  lazyS lazyS
+      // 28: debug.printString("ApproveCandidate B")
+      x{417070726f766543616e6469646174652042} PUSHSLICE	//  lazyS lazyS '45
+      STRDUMP DROP          	//  lazyS lazyS
+      // 29: val registerParticipantMessage = createMessage(
+      SWAP                  	//  lazyS lazyS
+      LDMSGADDR             	//  lazyS inMessageBody.userAddress lazyS
+      64 PLDU               	//  lazyS inMessageBody.userAddress inMessageBody.participantIndex
+      // 31: dest: inMessage.senderAddress
+      INMSG_SRC             	//  lazyS inMessageBody.userAddress inMessageBody.participantIndex '54
+      // 29: val registerParticipantMessage = createMessage(
+      NEWC                  	//  lazyS inMessageBody.userAddress inMessageBody.participantIndex '54 b
+      b{011000} STSLICECONST	//  lazyS inMessageBody.userAddress inMessageBody.participantIndex '54 b
+      STSLICE               	//  lazyS inMessageBody.userAddress inMessageBody.participantIndex b
+      2147483649 PUSHINT
+      143 STUR              	//  lazyS inMessageBody.userAddress inMessageBody.participantIndex b
+      s1 s2 XCHG            	//  lazyS inMessageBody.participantIndex inMessageBody.userAddress b
+      STSLICE               	//  lazyS inMessageBody.participantIndex b
+      OVER                  	//  lazyS inMessageBody.participantIndex b inMessageBody.participantIndex
+      64 STUR               	//  lazyS inMessageBody.participantIndex b
+      ENDC                  	//  lazyS inMessageBody.participantIndex registerParticipantMessage
+      // 36: debug.printString("ApproveCandidate C")
+      x{417070726f766543616e6469646174652043} PUSHSLICE	//  lazyS inMessageBody.participantIndex registerParticipantMessage '115
+      STRDUMP DROP          	//  lazyS inMessageBody.participantIndex registerParticipantMessage
+      // 37: registerParticipantMessage.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE)
+      64 PUSHINT            	//  lazyS inMessageBody.participantIndex registerParticipantMessage '116=64
+      SENDRAWMSG            	//  lazyS inMessageBody.participantIndex
+      // 39: debug.print(inMessageBody.participantIndex)
+      DUP                   	//  lazyS inMessageBody.participantIndex inMessageBody.participantIndex
+      s0 DUMP DROP          	//  lazyS inMessageBody.participantIndex
+      // 40: debug.printString("ApproveCandidate D")
+      x{417070726f766543616e6469646174652044} PUSHSLICE	//  lazyS inMessageBody.participantIndex '117
+      STRDUMP DROP          	//  lazyS inMessageBody.participantIndex
+      // 41: storage.participantIndex = inMessageBody.participantIndex
+      SWAP                  	//  inMessageBody.participantIndex lazyS
+      LDMSGADDR             	//  inMessageBody.participantIndex '118 lazyS
+      LDMSGADDR             	//  inMessageBody.participantIndex '118 '119 lazyS
+      1 PLDU                	//  inMessageBody.participantIndex '118 '119 '122
+      IF:<{                 	//  inMessageBody.participantIndex '118 '119
+      }>ELSE<{              	//  inMessageBody.participantIndex '118 '119
+      }>                    	//  storage.participantIndex '118 '119
+      // 43: debug.printString("ApproveCandidate E")
+      x{417070726f766543616e6469646174652045} PUSHSLICE	//  storage.participantIndex '118 '119 '126
+      STRDUMP DROP          	//  storage.participantIndex '118 '119
+      // 35: contract.setData(self.toCell())
+      SWAP
+      NEWC                  	//  storage.participantIndex '119 '118 b
+      STSLICE               	//  storage.participantIndex '119 b
+      STSLICE               	//  storage.participantIndex b
+      OVER                  	//  storage.participantIndex b storage.participantIndex
+      ISNULL                	//  storage.participantIndex b '129
+      IF:<{                 	//  storage.participantIndex b
+        NIP                 	//  b
+        b{0} STSLICECONST   	//  b
+      }>ELSE<{              	//  storage.participantIndex b
+        b{1} STSLICECONST   	//  storage.participantIndex b
+        64 STU              	//  b
+      }>
+      ENDC                  	//  '135
+      c4 POP                	// 
+    }>                      	//  in.body lazyS
+    // 48: debug.printString("unknown opcode")
+    DROP                    	//  in.body
+    x{756e6b6e6f776e206f70636f6465} PUSHSLICE	//  in.body '136
+    STRDUMP DROP            	//  in.body
+    // 49: assert (inMessage.body.isEmpty()) throw 0xFFFF
+    16 PUSHPOW2DEC          	//  in.body '137=65535
+    SWAP                    	//  '137=65535 in.body
+    SEMPTY                  	//  '137=65535 '138
+    THROWANYIFNOT           	// 
+  }>
+  // contracts/raffle-candidate.tolk:55:5
+  userAddress() PROC:<{       	// 
+    // 31: return RaffleCandidateStorage.fromCell(contract.getData())
+    c4 PUSH                 	//  '4
+    // 56: val storage = lazy RaffleCandidateStorage.load()
+    CTOS                    	//  lazyS
+    // 57: return storage.userAddress
+    LDMSGADDR               	//  '8 lazyS
+    NIP                     	//  lazyS
+    LDMSGADDR               	//  '9 lazyS
+    DROP                    	//  storage.userAddress
+  }>
+  // contracts/raffle-candidate.tolk:60:5
+  participantIndex() PROC:<{  	// 
+    // 31: return RaffleCandidateStorage.fromCell(contract.getData())
+    c4 PUSH                 	//  '4
+    // 61: val storage = lazy RaffleCandidateStorage.load()
+    CTOS                    	//  lazyS
+    // 62: return storage.participantIndex
+    LDMSGADDR               	//  '8 lazyS
+    NIP                     	//  lazyS
+    LDMSGADDR               	//  '9 lazyS
+    NIP                     	//  lazyS
+    1 LDU                   	//  '12 lazyS
+    SWAP                    	//  lazyS '12
+    IF:<{                   	//  lazyS
+      64 PLDU               	//  '10
+    }>ELSE<{                	//  lazyS
+      DROP                  	// 
+      PUSHNULL              	//  '10
+    }>                      	//  storage.participantIndex
+  }>
+}END>c
