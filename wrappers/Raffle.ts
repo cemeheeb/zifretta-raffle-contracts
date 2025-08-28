@@ -1,0 +1,126 @@
+import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode } from '@ton/core';
+import {compile} from "@ton/blueprint";
+
+type RaffleConditionsConfiguration = {
+  blackTicketPurchased: bigint;
+  whiteTicketMinted: bigint;
+}
+
+export type RaffleConfiguration = {
+    ownerAddress: Address;
+    deadline: bigint;
+    conditions: RaffleConditionsConfiguration;
+};
+
+function raffleConditionConfigurationToBits256(configuration: RaffleConditionsConfiguration) {
+
+  return beginCell()
+      .storeUint(configuration.blackTicketPurchased, 8)
+      .storeUint(configuration.whiteTicketMinted, 8)
+      .storeUint(0, 240) // fill zeroes remaining bits
+      .asSlice()
+      .loadBits(256);
+}
+
+export async function raffleConfigurationToCell(configuration: RaffleConfiguration): Promise<Cell> {
+
+  const raffleCandidateCode = await compile("RaffleCandidate");
+  const raffleParticipantCode = await compile("RaffleParticipant");
+
+  return beginCell()
+      .storeAddress(configuration.ownerAddress)
+      .storeUint(configuration.deadline, 64)
+      .storeBits(raffleConditionConfigurationToBits256(configuration.conditions))
+      .storeRef(raffleCandidateCode)
+      .storeRef(raffleParticipantCode)
+      .storeUint(0, 64)
+      .endCell();
+}
+
+export const OperationCodes = {
+    OP_RAFFLE_REGISTER_CANDIDATE: 0x13370010,
+    OP_RAFFLE_SET_CONDITIONS: 0x13370011,
+    OP_RAFFLE_APPROVE: 0x13370012,
+    OP_RAFFLE_CANDIDATE_SET_CONDITIONS: 0x13370020,
+    OP_RAFFLE_CANDIDATE_SET_PARTICIPANT_INDEX: 0x13370021,
+    OP_RAFFLE_PARTICIPANT_SET_USER_ADDRESS: 0x13370030,
+};
+
+export class Raffle implements Contract {
+    constructor(readonly address: Address, readonly init?: { code: Cell; data: Cell }) {}
+
+    static createFromAddress(address: Address) {
+        return new Raffle(address);
+    }
+
+    static async createFromConfig(config: RaffleConfiguration, code: Cell, workchain = 0) {
+        const data = await raffleConfigurationToCell(config);
+        const init = { code, data };
+
+        return new Raffle(contractAddress(workchain, init), init);
+    }
+
+    async sendDeploy(provider: ContractProvider, via: Sender, value: bigint) {
+        await provider.internal(via, {
+            value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: beginCell().endCell(),
+        });
+    }
+
+    async sendRegisterCandidate(
+        provider: ContractProvider,
+        via: Sender,
+        options: {
+            value: bigint;
+        }
+    ) {
+        await provider.internal(via, {
+            value: options.value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: beginCell()
+                .storeUint(OperationCodes.OP_RAFFLE_REGISTER_CANDIDATE, 32)
+                .endCell(),
+        });
+    }
+
+    async sendConditions(
+        provider: ContractProvider,
+        via: Sender,
+        options: {
+            value: bigint;
+            userAddress: Address;
+            conditions: RaffleConditionsConfiguration
+        }
+    ) {
+        await provider.internal(via, {
+            value: options.value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: beginCell()
+                .storeUint(OperationCodes.OP_RAFFLE_SET_CONDITIONS, 32)
+                .storeAddress(options.userAddress)
+                .storeBits(raffleConditionConfigurationToBits256(options.conditions))
+                .endCell(),
+        });
+    }
+
+    async getDeadline(provider: ContractProvider) {
+        const result = await provider.get('deadline', []);
+        return result.stack.readNumber();
+    }
+
+    async getParticipantQuantity(provider: ContractProvider) {
+        const result = await provider.get('participantQuantity', []);
+        return result.stack.readNumber();
+    }
+
+    async getRaffleCandidateAddress(provider: ContractProvider, address: Address) {
+        const result = await provider.get('raffleCandidateAddress', [{ type: 'slice', cell: beginCell().storeAddress(address).endCell() }]);
+        return result.stack.readAddress();
+    }
+
+    async getRaffleParticipantAddress(provider: ContractProvider, participantIndex: number) {
+        const result = await provider.get('raffleParticipantAddress', [{ type: 'int', value: BigInt(participantIndex) }]);
+        return result.stack.readAddress();
+    }
+}

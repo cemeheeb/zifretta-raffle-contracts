@@ -1,0 +1,32 @@
+{
+  "0x21eabd3331276c532778ad3fdcb5b78e5cf2ffefbc0a6dc3c64b7e237c8db621": "Main",
+  "Main": {
+    "receivers": [
+      {
+        "receiver": "internal",
+        "message": {
+          "kind": "typed",
+          "type": "0x7e8764ef"
+        }
+      },
+      {
+        "receiver": "internal",
+        "message": {
+          "kind": "typed",
+          "type": "0x3a752f06"
+        }
+      }
+    ],
+    "types": [
+      {
+        "name": "0x7e8764ef",
+        "header": 2122802415
+      },
+      {
+        "name": "0x3a752f06",
+        "header": 980758278
+      }
+    ],
+    "name": "Main"
+  }
+}
