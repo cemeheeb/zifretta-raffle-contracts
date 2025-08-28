@@ -50,11 +50,6 @@ fun onInternalMessage(inMessage: InMessage) {
     }
 }
 
-get fun userAddress(): address {
-    val storage = lazy RaffleCandidateStorage.load();
-    return storage.userAddress;;
-}
-
 get fun conditions(): bits256 {
     val storage = lazy RaffleCandidateStorage.load();
     return storage.conditions;
