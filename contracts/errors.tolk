@@ -1,6 +1,8 @@
 
 // these error codes are quite strange, but they are exactly the same as in FunC implementation
 
+const ERROR_ALREADY_MATCHED = 0x6001;
 const ERROR_INSUFFICIENT_FUNDS = 0x5001;
 const ERROR_EXPIRED = 0x4001;
-const ERROR_NOT_AUTHORIZED = 0x1337
+const ERROR_NOT_AUTHORIZED = 0x1337;
+const ERROR_WRONG_OPCODE = 0xFFFF;

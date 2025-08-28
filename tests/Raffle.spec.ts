@@ -3,7 +3,7 @@ import {Cell, toNano} from '@ton/core';
 import '@ton/test-utils';
 import {compile, sleep} from '@ton/blueprint';
 
-import {Raffle} from '../wrappers/Raffle';
+import {OperationCodes, Raffle} from '../wrappers/Raffle';
 import {RaffleCandidate} from "../wrappers/RaffleCandidate";
 import {RaffleParticipant} from "../wrappers/RaffleParticipant";
 
@@ -34,7 +34,11 @@ describe('Raffle', () => {
         await Raffle.createFromConfig(
             {
               ownerAddress: deployer.address,
-              deadline: BigInt(jest.now() + 100000)
+              deadline: BigInt(jest.now() + 100000),
+              conditions: {
+                blackTicketPurchases: 2,
+                whiteTicketMints: 2
+              }
             },
             code
         )
@@ -60,7 +64,7 @@ describe('Raffle', () => {
     expect(participantQuantity).toBe(0);
   });
 
-  it('should deploy RaffleCandidate contracts after askToRegisterCandidate send', async () => {
+  it('should deploy RaffleCandidate contracts after sendRegisterCandidate', async () => {
 
     for (const user of users) {
 
@@ -85,7 +89,7 @@ describe('Raffle', () => {
     }
   });
 
-  it('should deploy RaffleParticipant contract', async () => {
+  it('should deploy RaffleParticipant contract on conditions reached', async () => {
 
     let userIndex = 0;
     for (const user of users) {
@@ -102,8 +106,48 @@ describe('Raffle', () => {
         success: true,
       });
 
-      // Аппрув кондидата
-      const approveCandidateResult = await raffle.sendApproveCandidate(deployer.getSender(), {value: toNano("0.1"), userAddress: user.address});
+      // Отправка части
+      const setConditionsAResult = await raffle.sendConditions(deployer.getSender(), {
+        value: toNano("0.1"),
+        userAddress: user.address,
+        conditions: {
+          blackTicketPurchases: 1,
+          whiteTicketMints: 1
+        }
+      });
+
+      expect(setConditionsAResult.transactions).toHaveTransaction({
+        from: deployer.address,
+        to: raffle.address,
+        op: OperationCodes.OP_RAFFLE_SET_CONDITIONS
+      });
+
+      expect(setConditionsAResult.transactions).toHaveTransaction({
+        from: raffle.address,
+        to: raffleCandidate.address,
+        op: OperationCodes.OP_RAFFLE_CANDIDATE_SET_CONDITIONS
+      });
+
+      const setConditionsBResult = await raffle.sendConditions(deployer.getSender(), {
+        value: toNano("0.1"),
+        userAddress: user.address,
+        conditions: {
+          blackTicketPurchases: 2,
+          whiteTicketMints: 2
+        }
+      });
+
+      expect(setConditionsBResult.transactions).toHaveTransaction({
+        from: raffleCandidate.address,
+        to: raffle.address,
+        op: OperationCodes.OP_RAFFLE_APPROVE
+      });
+
+      expect(setConditionsBResult.transactions).toHaveTransaction({
+        from: raffle.address,
+        to: raffleCandidate.address,
+        op: OperationCodes.OP_RAFFLE_CANDIDATE_SET_PARTICIPANT_INDEX
+      });
 
       // Должен увеличится счетчик аппрувнутых участников
       expect(await raffle.getParticipantQuantity()).toBe(++userIndex);
@@ -116,7 +160,7 @@ describe('Raffle', () => {
         );
 
         // Должен быть задеплоен контракт аппрувнутого участника,
-        expect(approveCandidateResult.transactions).toHaveTransaction({
+        expect(setConditionsBResult.transactions).toHaveTransaction({
           from: raffle.address,
           to: raffleParticipant!.address,
           deploy: true,

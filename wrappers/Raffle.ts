@@ -1,28 +1,49 @@
 import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode } from '@ton/core';
 import {compile} from "@ton/blueprint";
 
+type RaffleConditionsConfiguration = {
+  blackTicketPurchased: bigint;
+  whiteTicketMinted: bigint;
+}
+
 export type RaffleConfiguration = {
     ownerAddress: Address;
     deadline: bigint;
+    conditions: RaffleConditionsConfiguration;
 };
+
+function raffleConditionConfigurationToBits256(configuration: RaffleConditionsConfiguration) {
+
+  return beginCell()
+      .storeUint(configuration.blackTicketPurchased, 8)
+      .storeUint(configuration.whiteTicketMinted, 8)
+      .storeUint(0, 240) // fill zeroes remaining bits
+      .asSlice()
+      .loadBits(256);
+}
 
 export async function raffleConfigurationToCell(configuration: RaffleConfiguration): Promise<Cell> {
 
-    const raffleCandidateCode = await compile("RaffleCandidate");
-    const raffleParticipantCode = await compile("RaffleParticipant");
+  const raffleCandidateCode = await compile("RaffleCandidate");
+  const raffleParticipantCode = await compile("RaffleParticipant");
 
-    return beginCell()
-        .storeAddress(configuration.ownerAddress)
-        .storeUint(configuration.deadline, 64)
-        .storeRef(raffleCandidateCode)
-        .storeRef(raffleParticipantCode)
-        .storeUint(0, 64)
-        .endCell();
+  return beginCell()
+      .storeAddress(configuration.ownerAddress)
+      .storeUint(configuration.deadline, 64)
+      .storeBits(raffleConditionConfigurationToBits256(configuration.conditions))
+      .storeRef(raffleCandidateCode)
+      .storeRef(raffleParticipantCode)
+      .storeUint(0, 64)
+      .endCell();
 }
 
 export const OperationCodes = {
-    OP_ASK_TO_REGISTER_CANDIDATE: 0x70000000,
-    OP_ASK_TO_APPROVE_CANDIDATE: 0x80000000,
+    OP_RAFFLE_REGISTER_CANDIDATE: 0x13370010,
+    OP_RAFFLE_SET_CONDITIONS: 0x13370011,
+    OP_RAFFLE_APPROVE: 0x13370012,
+    OP_RAFFLE_CANDIDATE_SET_CONDITIONS: 0x13370020,
+    OP_RAFFLE_CANDIDATE_SET_PARTICIPANT_INDEX: 0x13370021,
+    OP_RAFFLE_PARTICIPANT_SET_USER_ADDRESS: 0x13370030,
 };
 
 export class Raffle implements Contract {
@@ -58,25 +79,27 @@ export class Raffle implements Contract {
             value: options.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell()
-                .storeUint(OperationCodes.OP_ASK_TO_REGISTER_CANDIDATE, 32)
+                .storeUint(OperationCodes.OP_RAFFLE_REGISTER_CANDIDATE, 32)
                 .endCell(),
         });
     }
 
-    async sendApproveCandidate(
+    async sendConditions(
         provider: ContractProvider,
         via: Sender,
         options: {
             value: bigint;
             userAddress: Address;
+            conditions: RaffleConditionsConfiguration
         }
     ) {
         await provider.internal(via, {
             value: options.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell()
-                .storeUint(OperationCodes.OP_ASK_TO_APPROVE_CANDIDATE, 32)
+                .storeUint(OperationCodes.OP_RAFFLE_SET_CONDITIONS, 32)
                 .storeAddress(options.userAddress)
+                .storeBits(raffleConditionConfigurationToBits256(options.conditions))
                 .endCell(),
         });
     }

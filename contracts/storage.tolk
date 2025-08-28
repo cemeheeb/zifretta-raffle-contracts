@@ -5,6 +5,7 @@ struct RaffleStorage {
     // state init:
     ownerAddress: address;
     deadline: uint64;
+    conditions: bits256;
     candidateCode: cell;
     participantCode: cell;
     // after initialization state
@@ -24,6 +25,8 @@ struct RaffleCandidateStorage {
     raffleAddress: address;
     userAddress: address;
     // after initialization state
+    conditions: bits256;
+    isMatched: bool;
     participantIndex: uint64?;
 }
 
@@ -51,8 +54,12 @@ fun RaffleParticipantStorage.save(self) {
     contract.setData(self.toCell())
 }
 
+@pure
+fun createBits256None(): bits256
+    asm "x{0000000000000000000000000000000000000000000000000000000000000000} PUSHSLICE"
+
 fun calculateRaffleCandidateAddress(raffleAddress: address, userAddress: address, code: cell): AutoDeployAddress {
-    val data: RaffleCandidateStorage = { raffleAddress, userAddress, participantIndex: null };
+    val data: RaffleCandidateStorage = { raffleAddress, userAddress, conditions: createBits256None(), isMatched: false, participantIndex: null };
 
     return {
         workchain: MY_WORKCHAIN,

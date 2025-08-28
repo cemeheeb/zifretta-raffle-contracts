@@ -1,33 +1,46 @@
 tolk 1.0
 
 import "storage"
+import "errors"
 import "messages"
 import "constants"
 
-type AllowedMessageCandidate = ApproveCandidate;
+type AllowedMessageCandidate = RaffleCandidateSetConditions | RaffleCandidateSetParticipantIndex;
 
 fun onInternalMessage(inMessage: InMessage) {
 
     var storage = lazy RaffleCandidateStorage.load();
 
-    assert (inMessage.senderAddress == storage.raffleAddress) throw 0x2000;
+    assert (inMessage.senderAddress == storage.raffleAddress) throw ERROR_NOT_AUTHORIZED;
 
     val inMessageBody = lazy AllowedMessageCandidate.fromSlice(inMessage.body);
 
     match (inMessageBody) {
-        ApproveCandidate => {
+        RaffleCandidateSetConditions => {
             var storage = lazy RaffleCandidateStorage.load();
+            assert (storage.isMatched == false) throw ERROR_ALREADY_MATCHED;
 
-            val registerParticipantMessage = createMessage({
-                bounce: true,
-                dest: inMessage.senderAddress,
-                value: 0,
-                body: inMessageBody,
-            });
+            storage.conditions = inMessageBody.conditions;
+            storage.isMatched = inMessageBody.isMatched;
 
-            registerParticipantMessage.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
+            if (inMessageBody.isMatched) {
+                val approveMessage = createMessage({
+                    bounce: true,
+                    dest: storage.raffleAddress,
+                    value: 0,
+                    body: RaffleApprove {
+                        userAddress: storage.userAddress,
+                    },
+                });
+
+                approveMessage.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
+            }
+
+            storage.save();
+        }
+        RaffleCandidateSetParticipantIndex => {
+            var storage = lazy RaffleCandidateStorage.load();
             storage.participantIndex = inMessageBody.participantIndex;
-
             storage.save();
         }
         else => {
@@ -37,10 +50,14 @@ fun onInternalMessage(inMessage: InMessage) {
     }
 }
 
-
 get fun userAddress(): address {
     val storage = lazy RaffleCandidateStorage.load();
     return storage.userAddress;;
+}
+
+get fun conditions(): bits256 {
+    val storage = lazy RaffleCandidateStorage.load();
+    return storage.conditions;
 }
 
 get fun participantIndex(): int? {

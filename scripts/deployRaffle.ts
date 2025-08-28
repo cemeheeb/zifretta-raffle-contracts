@@ -20,6 +20,10 @@ export async function run(provider: NetworkProvider) {
           {
             ownerAddress: provider.sender().address!,
             deadline,
+            conditions: {
+              blackTicketPurchases: 2,
+              whiteTicketMints: 2
+            }
           },
           await compile('Raffle')
       )

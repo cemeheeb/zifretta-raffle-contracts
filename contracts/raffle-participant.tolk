@@ -3,26 +3,27 @@ tolk 1.0
 import "storage"
 import "messages"
 import "constants"
+import "errors"
 
-type AllowedMessageParticipant = ApproveCandidate
+type AllowedMessageParticipant = RaffleParticipantSetUserAddress
 
 fun onInternalMessage(inMessage: InMessage) {
     reserveToncoinsOnBalance(MIN_TONS_FOR_PARTICIPANT_STORAGE, RESERVE_MODE_EXACT_AMOUNT | RESERVE_MODE_BOUNCE_ON_ACTION_FAIL);
 
     var storage = lazy RaffleParticipantStorage.load();
-    assert (storage.raffleAddress == inMessage.senderAddress) throw 0x2000;
+    assert (storage.raffleAddress == inMessage.senderAddress) throw ERROR_NOT_AUTHORIZED;
 
     val inMessageBody = lazy AllowedMessageParticipant.fromSlice(inMessage.body);
 
     match (inMessageBody) {
-        ApproveCandidate => {
+        RaffleParticipantSetUserAddress => {
             storage.userAddress = inMessageBody.userAddress;
             storage.save()
         }
 
         else => {
             // ignore empty messages, "wrong opcode" for others
-            assert (inMessage.body.isEmpty()) throw 0xFFFF
+            assert (inMessage.body.isEmpty()) throw ERROR_WRONG_OPCODE
         }
     }
 }
