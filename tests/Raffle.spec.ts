@@ -60,8 +60,8 @@ describe('Raffle', () => {
   });
 
   it('participant quantity must be zero', async () => {
-    const participantQuantity = await raffle.getParticipantQuantity();
-    expect(participantQuantity).toBe(0);
+    const staticData = await raffle.getStaticData();
+    expect(staticData.participantsQuantity).toBe(0n);
   });
 
   it('should deploy RaffleCandidate contracts after sendRegisterCandidate', async () => {
@@ -109,8 +109,8 @@ describe('Raffle', () => {
         value: toNano("0.1"),
         userAddress: user.address,
         conditions: {
-          blackTicketPurchased: BigInt(1),
-          whiteTicketMinted: BigInt(1)
+          blackTicketPurchased: 1n,
+          whiteTicketMinted: 1n
         }
       });
 
@@ -138,8 +138,8 @@ describe('Raffle', () => {
         value: toNano("0.1"),
         userAddress: user.address,
         conditions: {
-          blackTicketPurchased: BigInt(2),
-          whiteTicketMinted: BigInt(2)
+          blackTicketPurchased: 2n,
+          whiteTicketMinted: 2n
         }
       });
 
@@ -156,7 +156,8 @@ describe('Raffle', () => {
       });
 
       // Должен увеличится счетчик аппрувнутых участников
-      expect(await raffle.getParticipantQuantity()).toBe(++userIndex);
+      const staticData = await raffle.getStaticData();
+      expect(staticData.participantsQuantity).toBe(BigInt(++userIndex));
 
       const participantIndex = await raffleCandidate.getParticipantIndex();
       if (participantIndex != null) {

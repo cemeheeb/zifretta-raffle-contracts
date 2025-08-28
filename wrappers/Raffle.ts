@@ -1,7 +1,17 @@
-import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode } from '@ton/core';
+import {
+    Address,
+    beginCell, BitReader, BitString,
+    Cell,
+    Contract,
+    contractAddress,
+    ContractProvider,
+    Sender,
+    SendMode,
+    Slice
+} from '@ton/core';
 import {compile} from "@ton/blueprint";
 
-type RaffleConditionsConfiguration = {
+type RaffleConditions = {
   blackTicketPurchased: bigint;
   whiteTicketMinted: bigint;
 }
@@ -9,10 +19,16 @@ type RaffleConditionsConfiguration = {
 export type RaffleConfiguration = {
     ownerAddress: Address;
     deadline: bigint;
-    conditions: RaffleConditionsConfiguration;
+    conditions: RaffleConditions;
 };
 
-function raffleConditionConfigurationToBits256(configuration: RaffleConditionsConfiguration) {
+export type RaffleStaticData = {
+    deadline: bigint;
+    conditions: RaffleConditions;
+    participantsQuantity: bigint;
+}
+
+function raffleConditionConfigurationToBits256(configuration: RaffleConditions) {
 
   return beginCell()
       .storeUint(configuration.blackTicketPurchased, 8)
@@ -90,7 +106,7 @@ export class Raffle implements Contract {
         options: {
             value: bigint;
             userAddress: Address;
-            conditions: RaffleConditionsConfiguration
+            conditions: RaffleConditions
         }
     ) {
         await provider.internal(via, {
@@ -104,14 +120,23 @@ export class Raffle implements Contract {
         });
     }
 
-    async getDeadline(provider: ContractProvider) {
-        const result = await provider.get('deadline', []);
-        return result.stack.readNumber();
-    }
+    async getStaticData(provider: ContractProvider): Promise<RaffleStaticData> {
+        const result = await provider.get('staticData', []);
 
-    async getParticipantQuantity(provider: ContractProvider) {
-        const result = await provider.get('participantQuantity', []);
-        return result.stack.readNumber();
+        const deadline = BigInt(result.stack.readNumber());
+        const conditionBuffer = result.stack.readBuffer();
+        const conditionSlice = new Slice(new BitReader(new BitString(conditionBuffer, 0, conditionBuffer.length)), []);
+        const conditions = {
+            blackTicketPurchased: BigInt(conditionSlice.loadUint(8)),
+            whiteTicketMinted: BigInt(conditionSlice.loadUint(8)),
+        }
+        const participantsQuantity = BigInt(result.stack.readNumber());
+
+        return {
+            deadline,
+            conditions,
+            participantsQuantity
+        };
     }
 
     async getRaffleCandidateAddress(provider: ContractProvider, address: Address) {

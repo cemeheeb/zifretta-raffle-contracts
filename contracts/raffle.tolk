@@ -88,19 +88,9 @@ fun onInternalMessage(inMessage: InMessage) {
     }
 }
 
-get fun deadline(): int {
+get fun staticData(): (int, bits256, int) {
     val storage = lazy RaffleStorage.load();
-    return storage.deadline;
-}
-
-get fun conditions(): bits256 {
-    val storage = lazy RaffleStorage.load();
-    return storage.conditions;
-}
-
-get fun participantQuantity(): int {
-    val storage = lazy RaffleStorage.load();
-    return storage.participantQuantity;
+    return (storage.deadline, storage.conditions, storage.participantQuantity);
 }
 
 get fun raffleCandidateAddress(userAddress: address): address {
