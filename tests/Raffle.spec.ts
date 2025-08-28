@@ -36,8 +36,8 @@ describe('Raffle', () => {
               ownerAddress: deployer.address,
               deadline: BigInt(jest.now() + 100000),
               conditions: {
-                blackTicketPurchases: 2,
-                whiteTicketMints: 2
+                blackTicketPurchased: BigInt(2),
+                whiteTicketMinted: BigInt(2)
               }
             },
             code
@@ -74,11 +74,9 @@ describe('Raffle', () => {
           RaffleCandidate.createFromAddress(raffleCandidateAddress)
       );
 
-      const userAddress = await raffleCandidate.getUserAddress();
       const participantIndex = await raffleCandidate.getParticipantIndex();
 
       expect(participantIndex).toBeNull();
-      expect(userAddress.toRawString()).toBe(user.address.toRawString());
 
       expect(registerCandidateResult.transactions).toHaveTransaction({
         from: raffle.address,
@@ -111,29 +109,37 @@ describe('Raffle', () => {
         value: toNano("0.1"),
         userAddress: user.address,
         conditions: {
-          blackTicketPurchases: 1,
-          whiteTicketMints: 1
+          blackTicketPurchased: BigInt(1),
+          whiteTicketMinted: BigInt(1)
         }
       });
 
       expect(setConditionsAResult.transactions).toHaveTransaction({
         from: deployer.address,
         to: raffle.address,
-        op: OperationCodes.OP_RAFFLE_SET_CONDITIONS
+        op: OperationCodes.OP_RAFFLE_SET_CONDITIONS,
+        success: true
       });
 
       expect(setConditionsAResult.transactions).toHaveTransaction({
         from: raffle.address,
         to: raffleCandidate.address,
-        op: OperationCodes.OP_RAFFLE_CANDIDATE_SET_CONDITIONS
+        op: OperationCodes.OP_RAFFLE_CANDIDATE_SET_CONDITIONS,
+        success: true
+      });
+
+      expect(setConditionsAResult.transactions).toHaveTransaction({
+        from: raffleCandidate.address,
+        to: deployer.address,
+        success: true
       });
 
       const setConditionsBResult = await raffle.sendConditions(deployer.getSender(), {
         value: toNano("0.1"),
         userAddress: user.address,
         conditions: {
-          blackTicketPurchases: 2,
-          whiteTicketMints: 2
+          blackTicketPurchased: BigInt(2),
+          whiteTicketMinted: BigInt(2)
         }
       });
 

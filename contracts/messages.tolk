@@ -14,6 +14,7 @@ struct (0x13370012) RaffleApprove {
 }
 
 struct (0x13370020) RaffleCandidateSetConditions {
+    recipientAddress: address;
     conditions: bits256;
     isMatched: bool;
 }

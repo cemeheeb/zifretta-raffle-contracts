@@ -8,6 +8,7 @@ import "constants"
 type AllowedMessageCandidate = RaffleCandidateSetConditions | RaffleCandidateSetParticipantIndex;
 
 fun onInternalMessage(inMessage: InMessage) {
+    reserveToncoinsOnBalance(MIN_TONS_FOR_CANDIDATE_STORAGE, RESERVE_MODE_EXACT_AMOUNT);
 
     var storage = lazy RaffleCandidateStorage.load();
 
@@ -17,7 +18,6 @@ fun onInternalMessage(inMessage: InMessage) {
 
     match (inMessageBody) {
         RaffleCandidateSetConditions => {
-            var storage = lazy RaffleCandidateStorage.load();
             assert (storage.isMatched == false) throw ERROR_ALREADY_MATCHED;
 
             storage.conditions = inMessageBody.conditions;
@@ -34,12 +34,20 @@ fun onInternalMessage(inMessage: InMessage) {
                 });
 
                 approveMessage.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
+            } else {
+                val excessMessage = createMessage({
+                    bounce: true,
+                    dest: inMessageBody.recipientAddress,
+                    value: 0,
+                    body: beginCell().endCell(),
+                });
+
+                excessMessage.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
             }
 
             storage.save();
         }
         RaffleCandidateSetParticipantIndex => {
-            var storage = lazy RaffleCandidateStorage.load();
             storage.participantIndex = inMessageBody.participantIndex;
             storage.save();
         }

@@ -23,7 +23,7 @@ fun onInternalMessage(inMessage: InMessage) {
                 bounce: false,
                 dest: calculateRaffleCandidateAddress(contract.getAddress(), inMessage.senderAddress, storage.candidateCode),
                 value: 0,
-                body: beginCell().endCell()
+                body: createEmptyCell()
             });
 
             deployRaffleCandidateMessage.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
@@ -37,17 +37,18 @@ fun onInternalMessage(inMessage: InMessage) {
             val candidate = calculateRaffleCandidateAddress(contract.getAddress(), inMessageBody.userAddress, storage.candidateCode);
             val candidateAddress = address.fromValidBuilder(candidate.buildAddress());
 
-            val askToApproveMessage = createMessage({
+            val setConditionsMessage = createMessage({
                 bounce: true,
                 dest: candidateAddress,
                 value: 0,
                 body: RaffleCandidateSetConditions {
+                    recipientAddress: inMessage.senderAddress,
                     conditions: inMessageBody.conditions,
                     isMatched: (storage.conditions as slice).bitsEqual(inMessageBody.conditions as slice)
                 },
             });
 
-            askToApproveMessage.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
+            setConditionsMessage.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
         }
         RaffleApprove => {
             assert (inMessage.valueCoins >= MIN_TONS_FOR_PARTICIPANT_STORAGE + APPROVE_CANDIDATE_OPERATION_FEE * 3) throw ERROR_INSUFFICIENT_FUNDS;
@@ -62,7 +63,7 @@ fun onInternalMessage(inMessage: InMessage) {
                 dest: calculateRaffleParticipantAddress(contract.getAddress(), storage.participantQuantity, storage.participantCode),
                 value: MIN_TONS_FOR_PARTICIPANT_STORAGE + APPROVE_CANDIDATE_OPERATION_FEE,
                 body: RaffleParticipantSetUserAddress {
-                    userAddress: inMessageBody.userAddress
+                    userAddress: inMessageBody.userAddress,
                 },
             });
             deployParticipantMessage.send(SEND_MODE_PAY_FEES_SEPARATELY);

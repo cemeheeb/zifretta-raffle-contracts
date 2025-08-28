@@ -18,7 +18,7 @@ fun onInternalMessage(inMessage: InMessage) {
     match (inMessageBody) {
         RaffleParticipantSetUserAddress => {
             storage.userAddress = inMessageBody.userAddress;
-            storage.save()
+            storage.save();
         }
 
         else => {
