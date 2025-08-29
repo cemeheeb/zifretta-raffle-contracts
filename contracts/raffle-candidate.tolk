@@ -5,7 +5,7 @@ import "errors"
 import "messages"
 import "constants"
 
-type AllowedMessageCandidate = RaffleCandidateSetConditions | RaffleCandidateSetParticipantIndex;
+type AllowedMessageCandidate = RaffleCandidateInitialize | RaffleCandidateSetConditions | RaffleCandidateSetParticipantIndex;
 
 fun onInternalMessage(inMessage: InMessage) {
     reserveToncoinsOnBalance(MIN_TONS_FOR_CANDIDATE_STORAGE, RESERVE_MODE_EXACT_AMOUNT);
@@ -17,6 +17,10 @@ fun onInternalMessage(inMessage: InMessage) {
     val inMessageBody = lazy AllowedMessageCandidate.fromSlice(inMessage.body);
 
     match (inMessageBody) {
+        RaffleCandidateInitialize => {
+            storage.telegramID = inMessageBody.telegramID;
+            storage.save();
+        }
         RaffleCandidateSetConditions => {
             assert (storage.isMatched == false) throw ERROR_ALREADY_MATCHED;
 
@@ -39,7 +43,7 @@ fun onInternalMessage(inMessage: InMessage) {
                     bounce: true,
                     dest: inMessageBody.recipientAddress,
                     value: 0,
-                    body: beginCell().endCell(),
+                    body: createEmptyCell(),
                 });
 
                 excessMessage.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);

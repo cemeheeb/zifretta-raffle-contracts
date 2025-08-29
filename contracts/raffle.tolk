@@ -6,7 +6,7 @@ import "errors"
 import "storage"
 import "messages"
 
-type AllowedMessageRaffleParticipant = RaffleRegisterCandidate | RaffleSetConditions | RaffleApprove;
+type AllowedMessageRaffleParticipant = RaffleRegisterCandidate | RaffleSetConditions | RaffleApprove | RaffleNext;
 
 fun onInternalMessage(inMessage: InMessage) {
     val inMessageBody = lazy AllowedMessageRaffleParticipant.fromSlice(inMessage.body);
@@ -23,7 +23,9 @@ fun onInternalMessage(inMessage: InMessage) {
                 bounce: false,
                 dest: calculateRaffleCandidateAddress(contract.getAddress(), inMessage.senderAddress, storage.candidateCode),
                 value: 0,
-                body: createEmptyCell()
+                body: RaffleCandidateInitialize {
+                    telegramID: inMessageBody.telegramID
+                }
             });
 
             deployRaffleCandidateMessage.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
@@ -81,6 +83,29 @@ fun onInternalMessage(inMessage: InMessage) {
             storage.participantQuantity += 1;
             storage.save();
         }
+        RaffleNext => {
+            assert (inMessage.valueCoins >= MIN_TONS_FOR_PARTICIPANT_STORAGE + APPROVE_CANDIDATE_OPERATION_FEE * 3) throw ERROR_INSUFFICIENT_FUNDS;
+            var storage = lazy RaffleStorage.load();
+
+            assert (storage.nextRewardIndex + 1 < storage.maxRewards) throw ERROR_REWARD_LIMIT_REACHED;
+
+            random.setSeed(blockchain.currentBlockLogicalTime());
+            val rewardIndex = random.range(storage.participantQuantity);
+
+            val raffleParticipantAddress = calculateRaffleParticipantAddress(contract.getAddress(), rewardIndex, storage.participantCode);
+            val participantRewardMessage = createMessage({
+                bounce: true,
+                dest: raffleParticipantAddress.buildAddress(),
+                value: RAFFLE_PARTICIPANT_REWARD_NOTIFICATION_OPERATION_FEE,
+                body: RaffleParticipantRewardNotification {
+                    message: inMessageBody.message
+                },
+            });
+            participantRewardMessage.send(SEND_MODE_PAY_FEES_SEPARATELY);
+
+            storage.nextRewardIndex += 1;
+            storage.save();
+        }
         else => {
             // ignore empty messages, "wrong opcode" for others
             assert (inMessage.body.isEmpty()) throw 0xFFFF
@@ -88,9 +113,9 @@ fun onInternalMessage(inMessage: InMessage) {
     }
 }
 
-get fun staticData(): (int, bits256, int) {
+get fun staticData(): (int, int, bits256, int, int) {
     val storage = lazy RaffleStorage.load();
-    return (storage.deadline, storage.conditions, storage.participantQuantity);
+    return (storage.deadline, storage.maxRewards, storage.conditions, storage.participantQuantity, storage.nextRewardIndex);
 }
 
 get fun raffleCandidateAddress(userAddress: address): address {

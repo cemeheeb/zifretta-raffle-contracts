@@ -1,7 +1,7 @@
 import {Blockchain, SandboxContract, TreasuryContract} from '@ton/sandbox';
-import {Cell, toNano} from '@ton/core';
+import {beginCell, Cell, toNano} from '@ton/core';
 import '@ton/test-utils';
-import {compile, sleep} from '@ton/blueprint';
+import {compile} from '@ton/blueprint';
 
 import {OperationCodes, Raffle} from '../wrappers/Raffle';
 import {RaffleCandidate} from "../wrappers/RaffleCandidate";
@@ -35,6 +35,7 @@ describe('Raffle', () => {
             {
               ownerAddress: deployer.address,
               deadline: BigInt(jest.now() + 100000),
+              maxRewards: 20n,
               conditions: {
                 blackTicketPurchased: BigInt(2),
                 whiteTicketMinted: BigInt(2)
@@ -68,7 +69,10 @@ describe('Raffle', () => {
 
     for (const user of users) {
 
-      const registerCandidateResult = await raffle.sendRegisterCandidate(user.getSender(), {value: toNano("0.1")});
+      const registerCandidateResult = await raffle.sendRegisterCandidate(user.getSender(), {
+        value: toNano("0.1"),
+        telegramID: 123n
+      });
       const raffleCandidateAddress = await raffle.getRaffleCandidateAddress(user.address);
       const raffleCandidate: SandboxContract<RaffleCandidate> = blockchain.openContract(
           RaffleCandidate.createFromAddress(raffleCandidateAddress)
@@ -91,7 +95,10 @@ describe('Raffle', () => {
 
     let userIndex = 0;
     for (const user of users) {
-      const registerCandidateResult = await raffle.sendRegisterCandidate(user.getSender(), {value: toNano("0.1")});
+      const registerCandidateResult = await raffle.sendRegisterCandidate(user.getSender(), {
+        value: toNano("0.1"),
+        telegramID: 123n
+      });
       const raffleCandidateAddress = await raffle.getRaffleCandidateAddress(user.address);
       const raffleCandidate: SandboxContract<RaffleCandidate> = blockchain.openContract(
           RaffleCandidate.createFromAddress(raffleCandidateAddress)
@@ -177,5 +184,15 @@ describe('Raffle', () => {
 
       expect(participantIndex).toBeDefined();
     }
+
+    const setRaffleNextAResult = await raffle.sendRaffleNext(deployer.getSender(), {
+      value: toNano("0.1"),
+      message: "Congratulations! You are the winner!"
+    });
+
+    expect(setRaffleNextAResult.transactions).toHaveTransaction({
+      success: true,
+      body: beginCell().storeMaybeStringRefTail("Congratulations! You are the winner!").endCell().beginParse().loadRef()
+    });
   });
 });

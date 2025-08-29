@@ -19,13 +19,16 @@ type RaffleConditions = {
 export type RaffleConfiguration = {
     ownerAddress: Address;
     deadline: bigint;
+    maxRewards: bigint;
     conditions: RaffleConditions;
 };
 
 export type RaffleStaticData = {
     deadline: bigint;
+    maxRewards: bigint;
     conditions: RaffleConditions;
     participantsQuantity: bigint;
+    nextRewardIndex: bigint;
 }
 
 function raffleConditionConfigurationToBits256(configuration: RaffleConditions) {
@@ -46,10 +49,12 @@ export async function raffleConfigurationToCell(configuration: RaffleConfigurati
   return beginCell()
       .storeAddress(configuration.ownerAddress)
       .storeUint(configuration.deadline, 64)
+      .storeUint(configuration.maxRewards, 32)
       .storeBits(raffleConditionConfigurationToBits256(configuration.conditions))
       .storeRef(raffleCandidateCode)
       .storeRef(raffleParticipantCode)
       .storeUint(0, 64)
+      .storeUint(0, 32)
       .endCell();
 }
 
@@ -57,9 +62,12 @@ export const OperationCodes = {
     OP_RAFFLE_REGISTER_CANDIDATE: 0x13370010,
     OP_RAFFLE_SET_CONDITIONS: 0x13370011,
     OP_RAFFLE_APPROVE: 0x13370012,
-    OP_RAFFLE_CANDIDATE_SET_CONDITIONS: 0x13370020,
-    OP_RAFFLE_CANDIDATE_SET_PARTICIPANT_INDEX: 0x13370021,
+    OP_RAFFLE_NEXT: 0x13370013,
+    OP_RAFFLE_CANDIDATE_INITIALIZE: 0x13370020,
+    OP_RAFFLE_CANDIDATE_SET_CONDITIONS: 0x13370021,
+    OP_RAFFLE_CANDIDATE_SET_PARTICIPANT_INDEX: 0x13370022,
     OP_RAFFLE_PARTICIPANT_SET_USER_ADDRESS: 0x13370030,
+    OP_RAFFLE_PARTICIPANT_REWARD_NOTIFICATION: 0x13370031,
 };
 
 export class Raffle implements Contract {
@@ -89,6 +97,7 @@ export class Raffle implements Contract {
         via: Sender,
         options: {
             value: bigint;
+            telegramID: bigint;
         }
     ) {
         await provider.internal(via, {
@@ -96,6 +105,7 @@ export class Raffle implements Contract {
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell()
                 .storeUint(OperationCodes.OP_RAFFLE_REGISTER_CANDIDATE, 32)
+                .storeUint(options.telegramID, 64)
                 .endCell(),
         });
     }
@@ -120,10 +130,30 @@ export class Raffle implements Contract {
         });
     }
 
+    async sendRaffleNext(
+        provider: ContractProvider,
+        via: Sender,
+        options: {
+            value: bigint;
+            message: string | null;
+        }
+    ) {
+
+        await provider.internal(via, {
+            value: options.value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: beginCell()
+                .storeUint(OperationCodes.OP_RAFFLE_NEXT, 32)
+                .storeMaybeStringRefTail(options.message)
+                .endCell(),
+        });
+    }
+
     async getStaticData(provider: ContractProvider): Promise<RaffleStaticData> {
         const result = await provider.get('staticData', []);
 
         const deadline = BigInt(result.stack.readNumber());
+        const maxRewards = BigInt(result.stack.readNumber());
         const conditionBuffer = result.stack.readBuffer();
         const conditionSlice = new Slice(new BitReader(new BitString(conditionBuffer, 0, conditionBuffer.length)), []);
         const conditions = {
@@ -131,11 +161,14 @@ export class Raffle implements Contract {
             whiteTicketMinted: BigInt(conditionSlice.loadUint(8)),
         }
         const participantsQuantity = BigInt(result.stack.readNumber());
+        const nextRewardIndex = BigInt(result.stack.readNumber());
 
         return {
             deadline,
+            maxRewards,
             conditions,
-            participantsQuantity
+            participantsQuantity,
+            nextRewardIndex
         };
     }
 

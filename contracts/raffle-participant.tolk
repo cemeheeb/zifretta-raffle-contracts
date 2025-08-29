@@ -5,7 +5,7 @@ import "messages"
 import "constants"
 import "errors"
 
-type AllowedMessageParticipant = RaffleParticipantSetUserAddress
+type AllowedMessageParticipant = RaffleParticipantSetUserAddress | RaffleParticipantRewardNotification;
 
 fun onInternalMessage(inMessage: InMessage) {
     reserveToncoinsOnBalance(MIN_TONS_FOR_PARTICIPANT_STORAGE, RESERVE_MODE_EXACT_AMOUNT | RESERVE_MODE_BOUNCE_ON_ACTION_FAIL);
@@ -19,6 +19,18 @@ fun onInternalMessage(inMessage: InMessage) {
         RaffleParticipantSetUserAddress => {
             storage.userAddress = inMessageBody.userAddress;
             storage.save();
+        }
+
+        RaffleParticipantRewardNotification => {
+            assert (storage.userAddress != null) throw ERROR_INVALID_PARTICIPANT;
+            val excessMessage = createMessage({
+                bounce: true,
+                dest: storage.userAddress,
+                value: 0,
+                body: inMessageBody.message,
+            });
+
+            excessMessage.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
         }
 
         else => {

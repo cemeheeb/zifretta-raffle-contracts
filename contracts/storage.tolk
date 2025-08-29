@@ -5,11 +5,13 @@ struct RaffleStorage {
     // state init:
     ownerAddress: address;
     deadline: uint64;
+    maxRewards: uint32;
     conditions: bits256;
     candidateCode: cell;
     participantCode: cell;
     // after initialization state
     participantQuantity: uint64; // default: 0
+    nextRewardIndex: uint32; // default: 0
 }
 
 fun RaffleStorage.load() {
@@ -27,6 +29,7 @@ struct RaffleCandidateStorage {
     // after initialization state
     conditions: bits256;
     isMatched: bool;
+    telegramID: uint64?;
     participantIndex: uint64?;
 }
 
@@ -59,7 +62,7 @@ fun createBits256None(): bits256
     asm "x{0000000000000000000000000000000000000000000000000000000000000000} PUSHSLICE"
 
 fun calculateRaffleCandidateAddress(raffleAddress: address, userAddress: address, code: cell): AutoDeployAddress {
-    val data: RaffleCandidateStorage = { raffleAddress, userAddress, conditions: createBits256None(), isMatched: false, participantIndex: null };
+    val data: RaffleCandidateStorage = { raffleAddress, userAddress, conditions: createBits256None(), isMatched: false, telegramID: null, participantIndex: null };
 
     return {
         workchain: MY_WORKCHAIN,
