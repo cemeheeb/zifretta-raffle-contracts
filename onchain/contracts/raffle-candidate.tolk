@@ -8,8 +8,8 @@ import "constants"
 type AllowedMessageCandidate = RaffleCandidateInitialize | RaffleCandidateSetConditions | RaffleCandidateSetParticipantIndex;
 
 fun onInternalMessage(inMessage: InMessage) {
-    var storage = lazy RaffleCandidateStorage.load();
 
+    var storage = lazy RaffleCandidateStorage.load();
     assert (inMessage.senderAddress == storage.raffleAddress) throw ERROR_NOT_AUTHORIZED;
 
     val inMessageBody = lazy AllowedMessageCandidate.fromSlice(inMessage.body);
@@ -26,7 +26,8 @@ fun onInternalMessage(inMessage: InMessage) {
                 body: createEmptyCell(),
             });
 
-            excessMessage.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE | SEND_MODE_IGNORE_ERRORS);
+            reserveToncoinsOnBalance(MIN_TONS_FOR_RAFFLE_CANDIDATE_STORAGE, RESERVE_MODE_EXACT_AMOUNT);
+            excessMessage.send(SEND_MODE_CARRY_ALL_BALANCE | SEND_MODE_IGNORE_ERRORS);
         }
         RaffleCandidateSetConditions => {
             assert (storage.isMatched == false) throw ERROR_ALREADY_MATCHED;
@@ -64,10 +65,20 @@ fun onInternalMessage(inMessage: InMessage) {
             storage.save();
         }
         else => {
-            // ignore empty messages, "wrong opcode" for others
-            assert (inMessage.body.isEmpty()) throw 0xFFFF
+            assert (inMessage.body.isEmpty()) throw ERROR_WRONG_OPCODE;
         }
     }
+}
+
+fun onBouncedMessage(in: InMessageBounced) {
+    in.bouncedBody.skipBouncedPrefix();
+
+    // process only raffle approve bounces; on other messages, an exception will be thrown, it's okay
+    RaffleApprove.fromSlice(in.bouncedBody);
+
+    var storage = lazy RaffleCandidateStorage.load();
+    storage.isMatched = false;
+    storage.save();
 }
 
 get fun conditions(): bits256 {

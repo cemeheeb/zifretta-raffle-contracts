@@ -19,6 +19,9 @@ struct (0x13370013) RaffleNext {
     message: Cell<SnakeString>;
 }
 
+struct (0x13370014) RafflePayout {
+}
+
 struct (0x13370020) RaffleCandidateInitialize {
     telegramID: uint64;
     recipientAddress: address;

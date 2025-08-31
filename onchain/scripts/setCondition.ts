@@ -12,15 +12,15 @@ export async function run(provider: NetworkProvider, args: string[]) {
   const whiteTicketMinted = await promptBigint('Amount of white ticket minted', ui);
 
   if (!(await provider.isContractDeployed(address))) {
-    ui.write(`Error: Contract at address ${address} is not deployed!`);
+    ui.write(`Error: Raffle contract at address ${address} is not deployed!`);
     return;
   }
 
   const raffle = provider.open(Raffle.createFromAddress(address));
 
   await raffle.sendConditions(provider.sender(), {
-    value: toNano("0.01"),
-    userAddress: Address.parse(""),
+    value: toNano("0.03"),
+    userAddress: provider.sender().address!,
     conditions: {
       blackTicketPurchased,
       whiteTicketMinted

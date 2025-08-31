@@ -8,14 +8,14 @@ import "errors"
 import "storage"
 import "messages"
 
-type AllowedMessageRaffleParticipant = RaffleRegisterCandidate | RaffleSetConditions | RaffleApprove | RaffleNext;
+type AllowedMessageRaffleParticipant = RaffleRegisterCandidate | RaffleSetConditions | RaffleApprove | RaffleNext | RafflePayout;
 
 fun onInternalMessage(inMessage: InMessage) {
     val inMessageBody = lazy AllowedMessageRaffleParticipant.fromSlice(inMessage.body);
 
     match (inMessageBody) {
         RaffleRegisterCandidate => {
-            assert (inMessage.valueCoins >= MIN_TONS_FOR_RAFFLE_CANDIDATE_STORAGE + RAFFLE_REGISTER_CANDIDATE_OPERATION_FEE * 3) throw ERROR_INSUFFICIENT_FUNDS;
+            assert (inMessage.valueCoins >= MIN_TONS_FOR_RAFFLE_CANDIDATE_STORAGE + RAFFLE_CANDIDATE_INITIALIZE_OPERATION_FEE) throw ERROR_INSUFFICIENT_FUNDS;
 
             val storage = lazy RaffleStorage.load();
 
@@ -35,7 +35,7 @@ fun onInternalMessage(inMessage: InMessage) {
             deployRaffleCandidateMessage.send(SEND_MODE_CARRY_ALL_BALANCE);
         }
         RaffleSetConditions => {
-            assert (inMessage.valueCoins >= MIN_TONS_FOR_RAFFLE_PARTICIPANT_STORAGE + RAFFLE_SET_CONDITIONS_OPERATION_FEE) throw ERROR_INSUFFICIENT_FUNDS;
+            assert (inMessage.valueCoins >= MIN_TONS_FOR_RAFFLE_CANDIDATE_STORAGE + RAFFLE_SET_CONDITIONS_OPERATION_FEE) throw ERROR_INSUFFICIENT_FUNDS;
 
             val storage = lazy RaffleStorage.load();
             assert (inMessage.senderAddress == storage.ownerAddress) throw ERROR_NOT_AUTHORIZED;
@@ -44,7 +44,7 @@ fun onInternalMessage(inMessage: InMessage) {
             val candidateAddress = address.fromValidBuilder(candidate.buildAddress());
 
             val setConditionsMessage = createMessage({
-                bounce: false,
+                bounce: true,
                 dest: candidateAddress,
                 value: 0,
                 body: RaffleCandidateSetConditions {
@@ -54,15 +54,32 @@ fun onInternalMessage(inMessage: InMessage) {
                 },
             });
 
-            setConditionsMessage.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
+            reserveToncoinsOnBalance(MIN_TONS_FOR_RAFFLE_STORAGE, RESERVE_MODE_EXACT_AMOUNT);
+            setConditionsMessage.send(SEND_MODE_CARRY_ALL_BALANCE);
         }
         RaffleApprove => {
-            assert (inMessage.valueCoins >= MIN_TONS_FOR_RAFFLE_PARTICIPANT_STORAGE + MIN_TONS_FOR_RAFFLE_CANDIDATE_STORAGE + RAFFLE_APPROVE_OPERATION_FEE + RAFFLE_PARTICIPANT_SET_USER_ADDRESS_OPERATION_FEE) throw ERROR_INSUFFICIENT_FUNDS;
+            assert (
+                inMessage.valueCoins >= (
+                    RAFFLE_CANDIDATE_SET_PARTICIPANT_INDEX_OPERATION_FEE +
+                    MIN_TONS_FOR_RAFFLE_PARTICIPANT_STORAGE +
+                    RAFFLE_PARTICIPANT_SET_USER_ADDRESS_OPERATION_FEE
+                )
+            ) throw ERROR_INSUFFICIENT_FUNDS;
             var storage = lazy RaffleStorage.load();
 
             val raffleCandidate = calculateRaffleCandidateAddress(contract.getAddress(), inMessageBody.userAddress, storage.candidateCode);
             val raffleCandidateAddress = address.fromValidBuilder(raffleCandidate.buildAddress());
             assert (inMessage.senderAddress == raffleCandidateAddress) throw ERROR_NOT_AUTHORIZED;
+
+            val setParticipantIndexMessage = createMessage({
+                bounce: true,
+                dest: raffleCandidateAddress,
+                value: RAFFLE_CANDIDATE_SET_PARTICIPANT_INDEX_OPERATION_FEE,
+                body: RaffleCandidateSetParticipantIndex {
+                    participantIndex: storage.participantQuantity
+                },
+            });
+            setParticipantIndexMessage.send(SEND_MODE_PAY_FEES_SEPARATELY);
 
             val deployParticipantMessage = createMessage({
                 bounce: false,
@@ -73,16 +90,6 @@ fun onInternalMessage(inMessage: InMessage) {
                 },
             });
             deployParticipantMessage.send(SEND_MODE_PAY_FEES_SEPARATELY);
-
-            val setParticipantIndexMessage = createMessage({
-                bounce: false,
-                dest: raffleCandidateAddress,
-                value: MIN_TONS_FOR_RAFFLE_CANDIDATE_STORAGE + RAFFLE_CANDIDATE_SET_PARTICIPANT_INDEX_OPERATION_FEE,
-                body: RaffleCandidateSetParticipantIndex {
-                    participantIndex: storage.participantQuantity
-                },
-            });
-            setParticipantIndexMessage.send(SEND_MODE_PAY_FEES_SEPARATELY);
 
             val excessMessage = createMessage({
                 bounce: false,
@@ -101,17 +108,31 @@ fun onInternalMessage(inMessage: InMessage) {
             assert (inMessage.valueCoins >= MIN_TONS_FOR_RAFFLE_PARTICIPANT_STORAGE + RAFFLE_NEXT_OPERATION_FEE) throw ERROR_INSUFFICIENT_FUNDS;
             var storage = lazy RaffleStorage.load();
 
+            assert (storage.participantQuantity >= storage.maxRewards) throw ERROR_NOT_ENOUGH_USERS;
             assert (storage.nextRewardIndex + 1 < storage.maxRewards) throw ERROR_REWARD_LIMIT_REACHED;
 
-            // random.initialize();
+            random.initialize();
 
-            var rewardIndex: uint64 = 2;
+            var rewardIndex: uint64 = 0;
+            var offset = 0;
             do {
                 rewardIndex = random.range(storage.participantQuantity);
 
                 var success: bool = false;
-                if (storage.winners != null) {
+                if (!storage.winners.dictIsEmpty()) {
+                    // random first
                     (_, success) = storage.winners.uDictGetRef(64, rewardIndex);
+
+                    // if already winner, wide search nearest participants before-first, after-last
+                    while (success) {
+                        offset += 1;
+                        if (rewardIndex - offset > 0) {
+                            (_, success) = storage.winners.uDictGetRef(64, rewardIndex - offset);
+                        }
+                        if (success && rewardIndex + offset < storage.participantQuantity) {
+                            (_, success) = storage.winners.uDictGetRef(64, rewardIndex - offset);
+                        }
+                    }
                 }
             } while (success);
 
@@ -129,10 +150,24 @@ fun onInternalMessage(inMessage: InMessage) {
                 },
             });
 
+            reserveToncoinsOnBalance(MIN_TONS_FOR_RAFFLE_STORAGE, RESERVE_MODE_EXACT_AMOUNT);
             participantRewardMessage.send(SEND_MODE_CARRY_ALL_BALANCE | SEND_MODE_IGNORE_ERRORS);
         }
+        RafflePayout => {
+            val storage = lazy RaffleStorage.load();
+            assert (inMessage.senderAddress == storage.ownerAddress) throw ERROR_NOT_AUTHORIZED;
+
+            val excessMessage = createMessage({
+                bounce: false,
+                dest: storage.ownerAddress,
+                value: 0,
+                body: createEmptyCell(),
+            });
+
+            reserveToncoinsOnBalance(MIN_TONS_FOR_RAFFLE_STORAGE, RESERVE_MODE_EXACT_AMOUNT);
+            excessMessage.send(SEND_MODE_CARRY_ALL_BALANCE);
+        }
         else => {
-            // ignore empty messages, "wrong opcode" for others
             assert (inMessage.body.isEmpty()) throw 0xFFFF
         }
     }

@@ -33,7 +33,6 @@ fun onInternalMessage(inMessage: InMessage) {
         }
 
         else => {
-            // ignore empty messages, "wrong opcode" for others
             assert (inMessage.body.isEmpty()) throw ERROR_WRONG_OPCODE
         }
     }

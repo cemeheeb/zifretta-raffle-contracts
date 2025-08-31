@@ -142,7 +142,7 @@ describe('Raffle', () => {
       });
 
       const setConditionsBResult = await raffle.sendConditions(deployer.getSender(), {
-        value: toNano("0.2"),
+        value: toNano("0.5"),
         userAddress: user.address,
         conditions: {
           blackTicketPurchased: 2n,
@@ -169,7 +169,7 @@ describe('Raffle', () => {
       expect(staticData.participantsQuantity).toBe(BigInt(++userIndex));
 
       const participantIndex = await raffleCandidate.getParticipantIndex();
-      console.warn({participantIndex});
+
       if (participantIndex != null) {
         const raffleParticipantAddress = await raffle.getRaffleParticipantAddress(participantIndex!);
         let raffleParticipant: SandboxContract<RaffleParticipant> = blockchain.openContract(
@@ -187,8 +187,6 @@ describe('Raffle', () => {
 
       expect(participantIndex).toBeDefined();
     }
-
-    console.warn(await raffle.getRaffleParticipantAddress(2));
 
     const staticData = await raffle.getStaticData();
     expect(staticData.participantsQuantity).toBe(5n);

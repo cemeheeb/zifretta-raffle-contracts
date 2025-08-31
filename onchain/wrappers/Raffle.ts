@@ -57,6 +57,7 @@ export async function raffleConfigurationToCell(configuration: RaffleConfigurati
       .storeUint(0, 64)
       .storeUint(0, 32)
       .storeMaybeRef(null)
+      .storeMaybeRef(null)
       .endCell();
 }
 
@@ -65,6 +66,7 @@ export const OperationCodes = {
     OP_RAFFLE_SET_CONDITIONS: 0x13370011,
     OP_RAFFLE_APPROVE: 0x13370012,
     OP_RAFFLE_NEXT: 0x13370013,
+    OP_RAFFLE_PAYOUT: 0x13370014,
     OP_RAFFLE_CANDIDATE_INITIALIZE: 0x13370020,
     OP_RAFFLE_CANDIDATE_SET_CONDITIONS: 0x13370021,
     OP_RAFFLE_CANDIDATE_SET_PARTICIPANT_INDEX: 0x13370022,
@@ -90,7 +92,9 @@ export class Raffle implements Contract {
         await provider.internal(via, {
             value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: beginCell().endCell(),
+            body: beginCell()
+                .storeUint(OperationCodes.OP_RAFFLE_PAYOUT, 32)
+                .endCell(),
         });
     }
 

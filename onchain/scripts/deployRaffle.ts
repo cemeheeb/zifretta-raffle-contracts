@@ -20,17 +20,18 @@ export async function run(provider: NetworkProvider) {
           {
             ownerAddress: provider.sender().address!,
             deadline,
+            maxRewards: 5n,
             conditions: {
-              blackTicketPurchases: 2,
-              whiteTicketMints: 2
+              blackTicketPurchased: 2n,
+              whiteTicketMinted: 2n
             }
           },
           await compile('Raffle')
       )
   );
 
-  await raffle.sendDeploy(provider.sender(), toNano('0.02'));
+  await raffle.sendDeploy(provider.sender(), toNano('0.03'));
   await provider.waitForDeploy(raffle.address);
 
-  console.log('deadline', await raffle.getDeadline());
+  console.log('staticData', await raffle.getStaticData());
 }
