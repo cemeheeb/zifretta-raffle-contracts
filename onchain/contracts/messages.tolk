@@ -21,6 +21,7 @@ struct (0x13370013) RaffleNext {
 
 struct (0x13370020) RaffleCandidateInitialize {
     telegramID: uint64;
+    recipientAddress: address;
 }
 
 struct (0x13370021) RaffleCandidateSetConditions {

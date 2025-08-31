@@ -1,0 +1,807 @@
+"Asm.fif" include
+// automatically generated from raffle.tolk, constants.tolk, errors.tolk, storage.tolk, messages.tolk, utils.tolk
+PROGRAM{
+  DECLPROC RaffleCandidateStorage.load()
+  DECLPROC RaffleCandidateStorage.save()
+  DECLPROC RaffleParticipantStorage.load()
+  DECLPROC RaffleParticipantStorage.save()
+  0 DECLMETHOD onInternalMessage()
+  99950 DECLMETHOD staticData()
+  92863 DECLMETHOD raffleCandidateAddress()
+  77229 DECLMETHOD raffleParticipantAddress()
+  // 6 functions inlined in-place:
+  // - RaffleStorage.load (7 calls)
+  // - RaffleStorage.save (2 calls)
+  // - calculateRaffleCandidateAddress (4 calls)
+  // - calculateRaffleParticipantAddress (3 calls)
+  // - SnakeString.unpackFromSlice (0 calls)
+  // - SnakeString.packToBuilder (0 calls)
+  // contracts/storage.tolk:36  (note: function never called!)
+  RaffleCandidateStorage.load() PROC:<{	// 
+    // 37: return RaffleCandidateStorage.fromCell(contract.getData())
+    c4 PUSH                 	//  '0
+    CTOS                    	//  s
+    LDMSGADDR               	//  '4 s
+    LDMSGADDR               	//  '4 '5 s
+    256 LDSLICE             	//  '4 '5 '7 s
+    1 LDI                   	//  '4 '5 '7 '9 s
+    1 LDU                   	//  '4 '5 '7 '9 '12 s
+    SWAP                    	//  '4 '5 '7 '9 s '12
+    IF:<{                   	//  '4 '5 '7 '9 s
+      64 LDU                	//  '4 '5 '7 '9 '10 s
+    }>ELSE<{                	//  '4 '5 '7 '9 s
+      PUSHNULL              	//  '4 '5 '7 '9 s '10
+      SWAP                  	//  '4 '5 '7 '9 '10 s
+    }>
+    1 LDU                   	//  '4 '5 '7 '9 '10 '18 s
+    SWAP                    	//  '4 '5 '7 '9 '10 s '18
+    IF:<{                   	//  '4 '5 '7 '9 '10 s
+      64 LDU                	//  '4 '5 '7 '9 '10 '16 s
+    }>ELSE<{                	//  '4 '5 '7 '9 '10 s
+      PUSHNULL              	//  '4 '5 '7 '9 '10 s '16
+      SWAP                  	//  '4 '5 '7 '9 '10 '16 s
+    }>
+    ENDS                    	//  '4 '5 '7 '9 '10 '16
+  }>
+  // contracts/storage.tolk:40  (note: function never called!)
+  RaffleCandidateStorage.save() PROC:<{	//  self.raffleAddress self.userAddress self.conditions self.isMatched self.telegramID self.participantIndex
+    // 41: contract.setData(self.toCell())
+    s0 s5 XCHG
+    NEWC                    	//  self.participantIndex self.userAddress self.conditions self.isMatched self.telegramID self.raffleAddress b
+    STSLICE                 	//  self.participantIndex self.userAddress self.conditions self.isMatched self.telegramID b
+    s1 s4 XCHG              	//  self.participantIndex self.telegramID self.conditions self.isMatched self.userAddress b
+    STSLICE                 	//  self.participantIndex self.telegramID self.conditions self.isMatched b
+    s2 PUSH                 	//  self.participantIndex self.telegramID self.conditions self.isMatched b self.conditions
+    SBITREFS                	//  self.participantIndex self.telegramID self.conditions self.isMatched b '8 '9
+    9 THROWIF               	//  self.participantIndex self.telegramID self.conditions self.isMatched b '8
+    8 PUSHPOW2              	//  self.participantIndex self.telegramID self.conditions self.isMatched b '8 '13=256
+    EQUAL                   	//  self.participantIndex self.telegramID self.conditions self.isMatched b '12
+    9 THROWIFNOT            	//  self.participantIndex self.telegramID self.conditions self.isMatched b
+    s1 s2 XCHG              	//  self.participantIndex self.telegramID self.isMatched self.conditions b
+    STSLICE                 	//  self.participantIndex self.telegramID self.isMatched b
+    1 STI                   	//  self.participantIndex self.telegramID b
+    OVER                    	//  self.participantIndex self.telegramID b self.telegramID
+    ISNULL                  	//  self.participantIndex self.telegramID b '16
+    IF:<{                   	//  self.participantIndex self.telegramID b
+      NIP                   	//  self.participantIndex b
+      b{0} STSLICECONST     	//  self.participantIndex b
+    }>ELSE<{                	//  self.participantIndex self.telegramID b
+      b{1} STSLICECONST     	//  self.participantIndex self.telegramID b
+      64 STU                	//  self.participantIndex b
+    }>
+    OVER                    	//  self.participantIndex b self.participantIndex
+    ISNULL                  	//  self.participantIndex b '22
+    IF:<{                   	//  self.participantIndex b
+      NIP                   	//  b
+      b{0} STSLICECONST     	//  b
+    }>ELSE<{                	//  self.participantIndex b
+      b{1} STSLICECONST     	//  self.participantIndex b
+      64 STU                	//  b
+    }>
+    ENDC                    	//  '28
+    c4 POP                  	// 
+  }>
+  // contracts/storage.tolk:52  (note: function never called!)
+  RaffleParticipantStorage.load() PROC:<{	// 
+    // 53: return RaffleParticipantStorage.fromCell(contract.getData())
+    c4 PUSH                 	//  '0
+    CTOS                    	//  s
+    LDMSGADDR               	//  '4 s
+    64 LDU                  	//  '4 '6 s
+    1 LDU                   	//  '4 '6 '9 s
+    SWAP                    	//  '4 '6 s '9
+    IF:<{                   	//  '4 '6 s
+      LDMSGADDR             	//  '4 '6 '7 s
+    }>ELSE<{                	//  '4 '6 s
+      PUSHNULL              	//  '4 '6 s '7
+      SWAP                  	//  '4 '6 '7 s
+    }>
+    ENDS                    	//  '4 '6 '7
+  }>
+  // contracts/storage.tolk:56  (note: function never called!)
+  RaffleParticipantStorage.save() PROC:<{	//  self.raffleAddress self.participantIndex self.userAddress
+    // 57: contract.setData(self.toCell())
+    s0 s2 XCHG
+    NEWC                    	//  self.userAddress self.participantIndex self.raffleAddress b
+    STSLICE                 	//  self.userAddress self.participantIndex b
+    64 STU                  	//  self.userAddress b
+    OVER                    	//  self.userAddress b self.userAddress
+    ISNULL                  	//  self.userAddress b '6
+    IF:<{                   	//  self.userAddress b
+      NIP                   	//  b
+      b{0} STSLICECONST     	//  b
+    }>ELSE<{                	//  self.userAddress b
+      b{1} STSLICECONST     	//  self.userAddress b
+      STSLICE               	//  b
+    }>
+    ENDC                    	//  '11
+    c4 POP                  	// 
+  }>
+  // contracts/raffle.tolk:11
+  onInternalMessage() PROC:<{ 	//  in.body
+    // 11: fun onInternalMessage(inMessage: InMessage)
+    INMSG_BOUNCED           	//  in.body '1
+    0 THROWIF               	//  in.body
+    // 12: val inMessageBody = lazy AllowedMessageRaffleParticipant.fromSlice(inMessage.body)
+    DUP                     	//  in.body lazyS
+    // 14: match (inMessageBody)
+    x{13370010} SDBEGINSQ   	//  in.body lazyS '12
+    IFJMP:<{                	//  in.body lazyS
+      // 16: assert (inMessage.valueCoins >= MIN_TONS_FOR_CANDIDATE_STORAGE + REGISTER_CANDIDATE_FEE * 3) throw ERROR_INSUFFICIENT_FUNDS
+      NIP                   	//  lazyS
+      20481 PUSHINT         	//  lazyS '15=20481
+      INMSG_VALUE           	//  lazyS '15=20481 '16
+      25000000 PUSHINT      	//  lazyS '15=20481 '16 '22
+      GEQ                   	//  lazyS '15=20481 '23
+      THROWANYIFNOT         	//  lazyS
+      // 18: return RaffleStorage.fromCell(contract.getData())
+      c4 PUSH               	//  lazyS '34
+      CTOS                  	//  lazyS lazyS
+      // 20: assert (blockchain.now() < storage.deadline) throw ERROR_EXPIRED
+      LDMSGADDR             	//  lazyS '38 lazyS
+      NIP                   	//  lazyS lazyS
+      64 LDU                	//  lazyS storage.deadline lazyS
+      PLDREF                	//  lazyS storage.deadline storage.candidateCode
+      16385 PUSHINT         	//  lazyS storage.deadline storage.candidateCode '42=16385
+      NOW                   	//  lazyS storage.deadline storage.candidateCode '42=16385 '43
+      s0 s3 XCHG2           	//  lazyS '42=16385 storage.candidateCode '43 storage.deadline
+      LESS                  	//  lazyS '42=16385 storage.candidateCode '44
+      s1 s2 XCHG            	//  lazyS storage.candidateCode '42=16385 '44
+      THROWANYIFNOT         	//  lazyS storage.candidateCode
+      // 22: val deployRaffleCandidateMessage = createMessage(
+      SWAP                  	//  storage.candidateCode lazyS
+      64 PLDU               	//  storage.candidateCode inMessageBody.USlot2
+      // 24: dest: calculateRaffleCandidateAddress(contract.getAddress(), inMessage.senderAddress, storage.candidateCode)
+      MYADDR                	//  storage.candidateCode inMessageBody.USlot2 '50
+      INMSG_SRC             	//  storage.candidateCode inMessageBody.USlot2 '50 '51
+      // 65: val data: RaffleCandidateStorage = { raffleAddress, userAddress, conditions: createBits256None(), isMatched: false, telegramID: null, participantIndex: null }
+      x{0000000000000000000000000000000000000000000000000000000000000000} PUSHSLICE	//  storage.candidateCode inMessageBody.USlot2 '50 '51 '66
+      PUSHNULL              	//  storage.candidateCode inMessageBody.USlot2 '50 '51 '66 '68
+      PUSHNULL              	//  storage.candidateCode inMessageBody.USlot2 data.raffleAddress data.userAddress data.conditions data.telegramID data.participantIndex
+      // 71: data: data.toCell()
+      s0 s4 XCHG
+      NEWC                  	//  storage.candidateCode inMessageBody.USlot2 data.participantIndex data.userAddress data.conditions data.telegramID data.raffleAddress b
+      STSLICE               	//  storage.candidateCode inMessageBody.USlot2 data.participantIndex data.userAddress data.conditions data.telegramID b
+      s1 s3 XCHG            	//  storage.candidateCode inMessageBody.USlot2 data.participantIndex data.telegramID data.conditions data.userAddress b
+      STSLICE               	//  storage.candidateCode inMessageBody.USlot2 data.participantIndex data.telegramID data.conditions b
+      OVER                  	//  storage.candidateCode inMessageBody.USlot2 data.participantIndex data.telegramID data.conditions b data.conditions
+      SBITREFS              	//  storage.candidateCode inMessageBody.USlot2 data.participantIndex data.telegramID data.conditions b '73 '74
+      9 THROWIF             	//  storage.candidateCode inMessageBody.USlot2 data.participantIndex data.telegramID data.conditions b '73
+      8 PUSHPOW2            	//  storage.candidateCode inMessageBody.USlot2 data.participantIndex data.telegramID data.conditions b '73 '78=256
+      EQUAL                 	//  storage.candidateCode inMessageBody.USlot2 data.participantIndex data.telegramID data.conditions b '77
+      9 THROWIFNOT          	//  storage.candidateCode inMessageBody.USlot2 data.participantIndex data.telegramID data.conditions b
+      STSLICE               	//  storage.candidateCode inMessageBody.USlot2 data.participantIndex data.telegramID b
+      b{0} STSLICECONST     	//  storage.candidateCode inMessageBody.USlot2 data.participantIndex data.telegramID b
+      OVER                  	//  storage.candidateCode inMessageBody.USlot2 data.participantIndex data.telegramID b data.telegramID
+      ISNULL                	//  storage.candidateCode inMessageBody.USlot2 data.participantIndex data.telegramID b '81
+      IF:<{                 	//  storage.candidateCode inMessageBody.USlot2 data.participantIndex data.telegramID b
+        NIP                 	//  storage.candidateCode inMessageBody.USlot2 data.participantIndex b
+        b{0} STSLICECONST   	//  storage.candidateCode inMessageBody.USlot2 data.participantIndex b
+      }>ELSE<{              	//  storage.candidateCode inMessageBody.USlot2 data.participantIndex data.telegramID b
+        b{1} STSLICECONST   	//  storage.candidateCode inMessageBody.USlot2 data.participantIndex data.telegramID b
+        64 STU              	//  storage.candidateCode inMessageBody.USlot2 data.participantIndex b
+      }>
+      OVER                  	//  storage.candidateCode inMessageBody.USlot2 data.participantIndex b data.participantIndex
+      ISNULL                	//  storage.candidateCode inMessageBody.USlot2 data.participantIndex b '87
+      IF:<{                 	//  storage.candidateCode inMessageBody.USlot2 data.participantIndex b
+        NIP                 	//  storage.candidateCode inMessageBody.USlot2 b
+        b{0} STSLICECONST   	//  storage.candidateCode inMessageBody.USlot2 b
+      }>ELSE<{              	//  storage.candidateCode inMessageBody.USlot2 data.participantIndex b
+        b{1} STSLICECONST   	//  storage.candidateCode inMessageBody.USlot2 data.participantIndex b
+        64 STU              	//  storage.candidateCode inMessageBody.USlot2 b
+      }>
+      ENDC                  	//  'USlot2 '114 'USlot3
+      // 22: val deployRaffleCandidateMessage = createMessage(
+      NEWC                  	//  'USlot2 '114 'USlot3 b
+      b{01000010000000000} STSLICECONST	//  'USlot2 '114 'USlot3 b
+      s3 s1 PUSH2           	//  'USlot2 '114 'USlot3 b 'USlot2 'USlot3
+                       // code data
+          DUP2            // code data code data
+          HASHCU
+          SWAP
+          HASHCU          // code data dataHash codeHash
+          SWAP2           // dataHash codeHash code data
+          CDEPTH
+          SWAP
+          CDEPTH          // dataHash codeHash dataDepth codeDepth
+          NEWC
+          x{020134} STSLICECONST // store refs_descriptor | bits_descriptor | data
+          16 STU                 // store codeDepth
+          16 STU                 // store dataDepth
+          256 STU                // store codeHash
+          256 STU                // store dataHash
+          ONE HASHEXT_SHA256	//  'USlot2 '114 'USlot3 b '136
+      256 STUR              	//  'USlot2 '114 'USlot3 b
+      140 PUSHINT
+      117 STUR              	//  'USlot2 '114 'USlot3 b
+      s1 s3 XCHG            	//  'USlot3 '114 'USlot2 b
+      STREF                 	//  'USlot3 '114 b
+      s1 s2 XCHG            	//  '114 'USlot3 b
+      STREF                 	//  '114 b
+      x{13370020} STSLICECONST	//  '114 b
+      64 STU                	//  b
+      ENDC                  	//  deployRaffleCandidateMessage
+      // 31: deployRaffleCandidateMessage.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE)
+      64 PUSHINT            	//  deployRaffleCandidateMessage '167=64
+      SENDRAWMSG            	// 
+    }>                      	//  in.body lazyS
+    // 14: match (inMessageBody)
+    x{13370011} SDBEGINSQ   	//  in.body lazyS '12
+    IFJMP:<{                	//  in.body lazyS
+      // 34: assert (inMessage.valueCoins >= MIN_TONS_FOR_PARTICIPANT_STORAGE + APPROVE_CANDIDATE_OPERATION_FEE * 3) throw ERROR_INSUFFICIENT_FUNDS
+      NIP                   	//  lazyS
+      20481 PUSHINT         	//  lazyS '170=20481
+      INMSG_VALUE           	//  lazyS '170=20481 '171
+      25000000 PUSHINT      	//  lazyS '170=20481 '171 '177
+      GEQ                   	//  lazyS '170=20481 '178
+      THROWANYIFNOT         	//  lazyS
+      // 18: return RaffleStorage.fromCell(contract.getData())
+      c4 PUSH               	//  lazyS '189
+      // 36: val storage = lazy RaffleStorage.load()
+      CTOS                  	//  lazyS lazyS
+      // 37: assert (inMessage.senderAddress == storage.ownerAddress) throw ERROR_NOT_AUTHORIZED
+      LDMSGADDR             	//  lazyS storage.ownerAddress lazyS
+      96 LDU
+      NIP                   	//  lazyS storage.ownerAddress lazyS
+      256 LDSLICE           	//  lazyS storage.ownerAddress storage.conditions lazyS
+      PLDREF                	//  lazyS storage.ownerAddress storage.conditions storage.candidateCode
+      4919 PUSHINT          	//  lazyS storage.ownerAddress storage.conditions storage.candidateCode '198=4919
+      INMSG_SRC             	//  lazyS storage.ownerAddress storage.conditions storage.candidateCode '198=4919 '199
+      s0 s4 XCHG2           	//  lazyS '198=4919 storage.conditions storage.candidateCode '199 storage.ownerAddress
+      SDEQ                  	//  lazyS '198=4919 storage.conditions storage.candidateCode '201
+      s1 s3 XCHG            	//  lazyS storage.candidateCode storage.conditions '198=4919 '201
+      THROWANYIFNOT         	//  lazyS storage.candidateCode storage.conditions
+      // 39: val candidate = calculateRaffleCandidateAddress(contract.getAddress(), inMessageBody.userAddress, storage.candidateCode)
+      s0 s2 XCHG            	//  storage.conditions storage.candidateCode lazyS
+      LDMSGADDR             	//  storage.conditions storage.candidateCode inMessageBody.USlot1 lazyS
+      256 LDSLICE           	//  storage.conditions storage.candidateCode inMessageBody.USlot1 '205 lazyS
+      DROP                  	//  storage.conditions storage.candidateCode inMessageBody.USlot1 inMessageBody.USlot2
+      MYADDR                	//  storage.conditions storage.candidateCode inMessageBody.USlot1 inMessageBody.USlot2 '213
+      // 65: val data: RaffleCandidateStorage = { raffleAddress, userAddress, conditions: createBits256None(), isMatched: false, telegramID: null, participantIndex: null }
+      x{0000000000000000000000000000000000000000000000000000000000000000} PUSHSLICE	//  storage.conditions storage.candidateCode inMessageBody.USlot1 inMessageBody.USlot2 '213 '227
+      PUSHNULL              	//  storage.conditions storage.candidateCode inMessageBody.USlot1 inMessageBody.USlot2 '213 '227 '229
+      PUSHNULL              	//  storage.conditions storage.candidateCode data.userAddress inMessageBody.USlot2 data.raffleAddress data.conditions data.telegramID data.participantIndex
+      // 71: data: data.toCell()
+      s0 s3 XCHG
+      NEWC                  	//  storage.conditions storage.candidateCode data.userAddress inMessageBody.USlot2 data.participantIndex data.conditions data.telegramID data.raffleAddress b
+      STSLICE               	//  storage.conditions storage.candidateCode data.userAddress inMessageBody.USlot2 data.participantIndex data.conditions data.telegramID b
+      s1 s5 XCHG            	//  storage.conditions storage.candidateCode data.telegramID inMessageBody.USlot2 data.participantIndex data.conditions data.userAddress b
+      STSLICE               	//  storage.conditions storage.candidateCode data.telegramID inMessageBody.USlot2 data.participantIndex data.conditions b
+      OVER                  	//  storage.conditions storage.candidateCode data.telegramID inMessageBody.USlot2 data.participantIndex data.conditions b data.conditions
+      SBITREFS              	//  storage.conditions storage.candidateCode data.telegramID inMessageBody.USlot2 data.participantIndex data.conditions b '234 '235
+      9 THROWIF             	//  storage.conditions storage.candidateCode data.telegramID inMessageBody.USlot2 data.participantIndex data.conditions b '234
+      8 PUSHPOW2            	//  storage.conditions storage.candidateCode data.telegramID inMessageBody.USlot2 data.participantIndex data.conditions b '234 '239=256
+      EQUAL                 	//  storage.conditions storage.candidateCode data.telegramID inMessageBody.USlot2 data.participantIndex data.conditions b '238
+      9 THROWIFNOT          	//  storage.conditions storage.candidateCode data.telegramID inMessageBody.USlot2 data.participantIndex data.conditions b
+      STSLICE               	//  storage.conditions storage.candidateCode data.telegramID inMessageBody.USlot2 data.participantIndex b
+      b{0} STSLICECONST     	//  storage.conditions storage.candidateCode data.telegramID inMessageBody.USlot2 data.participantIndex b
+      s3 PUSH               	//  storage.conditions storage.candidateCode data.telegramID inMessageBody.USlot2 data.participantIndex b data.telegramID
+      ISNULL                	//  storage.conditions storage.candidateCode data.telegramID inMessageBody.USlot2 data.participantIndex b '242
+      IF:<{                 	//  storage.conditions storage.candidateCode data.telegramID inMessageBody.USlot2 data.participantIndex b
+        s3 POP              	//  storage.conditions storage.candidateCode b inMessageBody.USlot2 data.participantIndex
+        s0 s2 XCHG          	//  storage.conditions storage.candidateCode data.participantIndex inMessageBody.USlot2 b
+        b{0} STSLICECONST   	//  storage.conditions storage.candidateCode data.participantIndex inMessageBody.USlot2 b
+      }>ELSE<{              	//  storage.conditions storage.candidateCode data.telegramID inMessageBody.USlot2 data.participantIndex b
+        b{1} STSLICECONST   	//  storage.conditions storage.candidateCode data.telegramID inMessageBody.USlot2 data.participantIndex b
+        s1 s3 XCHG          	//  storage.conditions storage.candidateCode data.participantIndex inMessageBody.USlot2 data.telegramID b
+        64 STU              	//  storage.conditions storage.candidateCode data.participantIndex inMessageBody.USlot2 b
+      }>
+      s2 PUSH               	//  storage.conditions storage.candidateCode data.participantIndex inMessageBody.USlot2 b data.participantIndex
+      ISNULL                	//  storage.conditions storage.candidateCode data.participantIndex inMessageBody.USlot2 b '248
+      IF:<{                 	//  storage.conditions storage.candidateCode data.participantIndex inMessageBody.USlot2 b
+        1 2 BLKDROP2        	//  storage.conditions storage.candidateCode inMessageBody.USlot2 b
+        b{0} STSLICECONST   	//  storage.conditions storage.candidateCode inMessageBody.USlot2 b
+      }>ELSE<{              	//  storage.conditions storage.candidateCode data.participantIndex inMessageBody.USlot2 b
+        b{1} STSLICECONST   	//  storage.conditions storage.candidateCode data.participantIndex inMessageBody.USlot2 b
+        s1 s2 XCHG          	//  storage.conditions storage.candidateCode inMessageBody.USlot2 data.participantIndex b
+        64 STU              	//  storage.conditions storage.candidateCode inMessageBody.USlot2 b
+      }>
+      ENDC                  	//  storage.conditions candidate.stateInit.USlot1 inMessageBody.USlot2 candidate.stateInit.USlot2
+      // 40: val candidateAddress = address.fromValidBuilder(candidate.buildAddress())
+      s1 s2 XCHG            	//  storage.conditions inMessageBody.USlot2 candidate.stateInit.USlot1 candidate.stateInit.USlot2
+                       // code data
+          DUP2            // code data code data
+          HASHCU
+          SWAP
+          HASHCU          // code data dataHash codeHash
+          SWAP2           // dataHash codeHash code data
+          CDEPTH
+          SWAP
+          CDEPTH          // dataHash codeHash dataDepth codeDepth
+          NEWC
+          x{020134} STSLICECONST // store refs_descriptor | bits_descriptor | data
+          16 STU                 // store codeDepth
+          16 STU                 // store dataDepth
+          256 STU                // store codeHash
+          256 STU                // store dataHash
+          ONE HASHEXT_SHA256	//  storage.conditions inMessageBody.USlot2 '265
+      NEWC                  	//  storage.conditions inMessageBody.USlot2 '265 '264
+      b{10000000000} STSLICECONST	//  storage.conditions inMessageBody.USlot2 '265 '264
+      256 STU               	//  storage.conditions inMessageBody.USlot2 '264
+      ENDC
+      CTOS                  	//  storage.conditions inMessageBody.USlot2 candidateAddress
+      // 47: recipientAddress: inMessage.senderAddress
+      INMSG_SRC             	//  storage.conditions inMessageBody.USlot2 candidateAddress '297
+      s3 s2 XCPU            	//  '297 inMessageBody.USlot2 candidateAddress storage.conditions inMessageBody.USlot2
+      // 49: isMatched: (storage.conditions as slice).bitsEqual(inMessageBody.conditions as slice)
+      SDEQ                  	//  '297 inMessageBody.USlot2 candidateAddress '299
+      // 42: val setConditionsMessage = createMessage(
+      NEWC                  	//  '297 inMessageBody.USlot2 candidateAddress '299 refb
+      x{13370021} STSLICECONST	//  '297 inMessageBody.USlot2 candidateAddress '299 refb
+      s1 s4 XCHG            	//  '299 inMessageBody.USlot2 candidateAddress '297 refb
+      STSLICE               	//  '299 inMessageBody.USlot2 candidateAddress refb
+      s2 PUSH               	//  '299 inMessageBody.USlot2 candidateAddress refb inMessageBody.USlot2
+      SBITREFS              	//  '299 inMessageBody.USlot2 candidateAddress refb '315 '316
+      9 THROWIF             	//  '299 inMessageBody.USlot2 candidateAddress refb '315
+      8 PUSHPOW2            	//  '299 inMessageBody.USlot2 candidateAddress refb '315 '320=256
+      EQUAL                 	//  '299 inMessageBody.USlot2 candidateAddress refb '319
+      9 THROWIFNOT          	//  '299 inMessageBody.USlot2 candidateAddress refb
+      s1 s2 XCHG            	//  '299 candidateAddress inMessageBody.USlot2 refb
+      STSLICE               	//  '299 candidateAddress refb
+      s1 s2 XCHG            	//  candidateAddress '299 refb
+      1 STI                 	//  candidateAddress refb
+      ENDC                  	//  candidateAddress '323
+      NEWC                  	//  candidateAddress '323 b
+      b{011000} STSLICECONST	//  candidateAddress '323 b
+      s1 s2 XCHG            	//  '323 candidateAddress b
+      STSLICE               	//  '323 b
+      1 PUSHINT
+      111 STUR              	//  '323 b
+      STREF                 	//  b
+      ENDC                  	//  setConditionsMessage
+      // 53: setConditionsMessage.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE)
+      64 PUSHINT            	//  setConditionsMessage '361=64
+      SENDRAWMSG            	// 
+    }>                      	//  in.body lazyS
+    // 14: match (inMessageBody)
+    x{13370012} SDBEGINSQ   	//  in.body lazyS '12
+    IFJMP:<{                	//  in.body lazyS
+      // 56: assert (inMessage.valueCoins >= MIN_TONS_FOR_PARTICIPANT_STORAGE + APPROVE_CANDIDATE_OPERATION_FEE * 3) throw ERROR_INSUFFICIENT_FUNDS
+      NIP                   	//  lazyS
+      20481 PUSHINT         	//  lazyS '364=20481
+      INMSG_VALUE           	//  lazyS '364=20481 '365
+      25000000 PUSHINT      	//  lazyS '364=20481 '365 '371
+      GEQ                   	//  lazyS '364=20481 '372
+      THROWANYIFNOT         	//  lazyS
+      // 18: return RaffleStorage.fromCell(contract.getData())
+      c4 PUSH               	//  lazyS '383
+      // 57: var storage = lazy RaffleStorage.load()
+      CTOS                  	//  lazyS lazyS
+      // 59: val raffleCandidate = calculateRaffleCandidateAddress(contract.getAddress(), inMessageBody.userAddress, storage.candidateCode)
+      SWAP                  	//  lazyS lazyS
+      LDMSGADDR             	//  lazyS '387 lazyS
+      DROP                  	//  lazyS inMessageBody.USlot2
+      SWAP                  	//  inMessageBody.USlot2 lazyS
+      LDMSGADDR             	//  inMessageBody.USlot2 '388 lazyS
+      352 PUSHINT           	//  inMessageBody.USlot2 '388 lazyS '389=352
+      LDSLICEX              	//  inMessageBody.USlot2 '388 '390 lazyS
+      LDREF                 	//  inMessageBody.USlot2 '388 '390 storage.candidateCode lazyS
+      LDREF                 	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode lazyS
+      64 LDU                	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395
+      MYADDR                	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 '403
+      // 65: val data: RaffleCandidateStorage = { raffleAddress, userAddress, conditions: createBits256None(), isMatched: false, telegramID: null, participantIndex: null }
+      x{0000000000000000000000000000000000000000000000000000000000000000} PUSHSLICE	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 '403 '417
+      PUSHNULL              	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 '403 '417 '419
+      PUSHNULL              	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 '403 '417 '419 '420
+      s10 PUSH              	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 data.raffleAddress data.conditions data.telegramID data.participantIndex data.userAddress
+      // 71: data: data.toCell()
+      s0 s4 XCHG
+      NEWC                  	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 data.userAddress data.conditions data.telegramID data.participantIndex data.raffleAddress b
+      STSLICE               	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 data.userAddress data.conditions data.telegramID data.participantIndex b
+      s1 s4 XCHG            	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 data.participantIndex data.conditions data.telegramID data.userAddress b
+      STSLICE               	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 data.participantIndex data.conditions data.telegramID b
+      s2 PUSH               	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 data.participantIndex data.conditions data.telegramID b data.conditions
+      SBITREFS              	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 data.participantIndex data.conditions data.telegramID b '424 '425
+      9 THROWIF             	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 data.participantIndex data.conditions data.telegramID b '424
+      8 PUSHPOW2            	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 data.participantIndex data.conditions data.telegramID b '424 '429=256
+      EQUAL                 	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 data.participantIndex data.conditions data.telegramID b '428
+      9 THROWIFNOT          	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 data.participantIndex data.conditions data.telegramID b
+      s1 s2 XCHG            	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 data.participantIndex data.telegramID data.conditions b
+      STSLICE               	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 data.participantIndex data.telegramID b
+      b{0} STSLICECONST     	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 data.participantIndex data.telegramID b
+      OVER                  	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 data.participantIndex data.telegramID b data.telegramID
+      ISNULL                	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 data.participantIndex data.telegramID b '432
+      IF:<{                 	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 data.participantIndex data.telegramID b
+        NIP                 	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 data.participantIndex b
+        b{0} STSLICECONST   	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 data.participantIndex b
+      }>ELSE<{              	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 data.participantIndex data.telegramID b
+        b{1} STSLICECONST   	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 data.participantIndex data.telegramID b
+        64 STU              	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 data.participantIndex b
+      }>
+      OVER                  	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 data.participantIndex b data.participantIndex
+      ISNULL                	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 data.participantIndex b '438
+      IF:<{                 	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 data.participantIndex b
+        NIP                 	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 b
+        b{0} STSLICECONST   	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 b
+      }>ELSE<{              	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 data.participantIndex b
+        b{1} STSLICECONST   	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 data.participantIndex b
+        64 STU              	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 b
+      }>
+      ENDC                  	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 '444
+      s4 s(-1) PUXC         	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidate.stateInit.USlot1 raffleCandidate.stateInit.USlot2
+      // 60: val raffleCandidateAddress = raffleCandidate.buildAddress()
+                       // code data
+          DUP2            // code data code data
+          HASHCU
+          SWAP
+          HASHCU          // code data dataHash codeHash
+          SWAP2           // dataHash codeHash code data
+          CDEPTH
+          SWAP
+          CDEPTH          // dataHash codeHash dataDepth codeDepth
+          NEWC
+          x{020134} STSLICECONST // store refs_descriptor | bits_descriptor | data
+          16 STU                 // store codeDepth
+          16 STU                 // store dataDepth
+          256 STU                // store codeHash
+          256 STU                // store dataHash
+          ONE HASHEXT_SHA256	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 '455
+      NEWC                  	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 '455 '454
+      b{10000000000} STSLICECONST	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 '455 '454
+      256 STU               	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress
+      // 61: assert (inMessage.senderAddress == address.fromValidBuilder(raffleCandidateAddress)) throw ERROR_NOT_AUTHORIZED
+      4919 PUSHINT          	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress '474=4919
+      INMSG_SRC             	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress '474=4919 '475
+      s2 PUSH               	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress '474=4919 '475 raffleCandidateAddress
+      ENDC
+      CTOS                  	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress '474=4919 '475 '477
+      SDEQ                  	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress '474=4919 '478
+      THROWANYIFNOT         	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress
+      // 65: dest: calculateRaffleParticipantAddress(contract.getAddress(), storage.participantQuantity, storage.participantCode)
+      MYADDR                	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress '482
+      // 77: val data: RaffleParticipantStorage = { raffleAddress, participantIndex, userAddress: createAddressNone() }
+      b{00} PUSHSLICE       	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress '482 '493
+      s4 PUSH               	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress data.raffleAddress data.userAddress data.participantIndex
+      // 83: data: data.toCell()
+      s0 s2 XCHG
+      NEWC                  	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress data.participantIndex data.userAddress data.raffleAddress b
+      STSLICE               	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress data.participantIndex data.userAddress b
+      s1 s2 XCHG            	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress data.userAddress data.participantIndex b
+      64 STU                	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress data.userAddress b
+      OVER                  	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress data.userAddress b data.userAddress
+      ISNULL                	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress data.userAddress b '498
+      IF:<{                 	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress data.userAddress b
+        NIP                 	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress b
+        b{0} STSLICECONST   	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress b
+      }>ELSE<{              	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress data.userAddress b
+        b{1} STSLICECONST   	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress data.userAddress b
+        STSLICE             	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress b
+      }>
+      ENDC                  	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress '503
+      // 79: return
+      s4 PUSH               	//  inMessageBody.USlot2 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress 'USlot2 'USlot1
+      // 66: value: MIN_TONS_FOR_PARTICIPANT_STORAGE + APPROVE_CANDIDATE_OPERATION_FEE
+      15000000 PUSHINT      	//  '526 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress 'USlot3 'USlot2 'USlot2
+      // 63: val deployParticipantMessage = createMessage(
+      NEWC                  	//  '526 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress 'USlot3 'USlot2 'USlot2 b
+      b{01000010000000000} STSLICECONST	//  '526 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress 'USlot3 'USlot2 'USlot2 b
+      s2 s3 PUSH2           	//  '526 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress 'USlot3 'USlot2 'USlot2 b 'USlot2 'USlot3
+                       // code data
+          DUP2            // code data code data
+          HASHCU
+          SWAP
+          HASHCU          // code data dataHash codeHash
+          SWAP2           // dataHash codeHash code data
+          CDEPTH
+          SWAP
+          CDEPTH          // dataHash codeHash dataDepth codeDepth
+          NEWC
+          x{020134} STSLICECONST // store refs_descriptor | bits_descriptor | data
+          16 STU                 // store codeDepth
+          16 STU                 // store dataDepth
+          256 STU                // store codeHash
+          256 STU                // store dataHash
+          ONE HASHEXT_SHA256	//  '526 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress 'USlot3 'USlot2 'USlot2 b '548
+      256 STUR              	//  '526 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress 'USlot3 'USlot2 'USlot2 b
+      SWAP                  	//  '526 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress 'USlot3 'USlot2 b 'USlot2
+      STGRAMS               	//  '526 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress 'USlot3 'USlot2 b
+      140 PUSHINT
+      113 STUR              	//  '526 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress 'USlot3 'USlot2 b
+      STREF                 	//  '526 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress 'USlot3 b
+      STREF                 	//  '526 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress b
+      x{13370030} STSLICECONST	//  '526 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress b
+      s1 s8 XCHG            	//  raffleCandidateAddress '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 '526 b
+      STSLICE               	//  raffleCandidateAddress '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 b
+      ENDC                  	//  raffleCandidateAddress '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 deployParticipantMessage
+      // 71: deployParticipantMessage.send(SEND_MODE_PAY_FEES_SEPARATELY)
+      1 PUSHINT             	//  raffleCandidateAddress '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 deployParticipantMessage '578=1
+      SENDRAWMSG            	//  raffleCandidateAddress '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395
+      // 76: value: APPROVE_CANDIDATE_OPERATION_FEE
+      5000000 PUSHINT       	//  raffleCandidateAddress '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 '581=5000000
+      // 73: val setParticipantIndex = createMessage(
+      NEWC                  	//  raffleCandidateAddress '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 '581=5000000 b
+      b{011000} STSLICECONST	//  raffleCandidateAddress '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 '581=5000000 b
+      s1 s8 XCHG            	//  '581=5000000 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 raffleCandidateAddress b
+      STB                   	//  '581=5000000 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity '395 b
+      s0 s7 XCHG2           	//  '395 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity b '581=5000000
+      STGRAMS               	//  '395 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity b
+      322371618 PUSHINT
+      139 STUR              	//  '395 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity b
+      OVER                  	//  '395 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity b storage.participantQuantity
+      64 STUR               	//  '395 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity b
+      ENDC                  	//  '395 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity setParticipantIndex
+      // 81: setParticipantIndex.send(SEND_MODE_PAY_FEES_SEPARATELY)
+      1 PUSHINT             	//  '395 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity setParticipantIndex '643=1
+      SENDRAWMSG            	//  '395 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity
+      // 83: storage.participantQuantity += 1
+      INC                   	//  '395 '388 '390 storage.candidateCode storage.participantCode storage.participantQuantity
+      // 22: contract.setData(self.toCell())
+      s0 s4 XCHG
+      NEWC                  	//  '395 storage.participantQuantity '390 storage.candidateCode storage.participantCode '388 b
+      STSLICE               	//  '395 storage.participantQuantity '390 storage.candidateCode storage.participantCode b
+      s1 s3 XCHG            	//  '395 storage.participantQuantity storage.participantCode storage.candidateCode '390 b
+      STSLICE               	//  '395 storage.participantQuantity storage.participantCode storage.candidateCode b
+      STREF                 	//  '395 storage.participantQuantity storage.participantCode b
+      STREF                 	//  '395 storage.participantQuantity b
+      64 STU                	//  '395 b
+      STSLICE               	//  b
+      ENDC                  	//  '649
+      c4 POP                	// 
+    }>                      	//  in.body lazyS
+    // 14: match (inMessageBody)
+    x{13370013} SDBEGINSQ   	//  in.body lazyS '12
+    IFJMP:<{                	//  in.body lazyS
+      // 87: assert (inMessage.valueCoins >= MIN_TONS_FOR_PARTICIPANT_STORAGE + APPROVE_CANDIDATE_OPERATION_FEE * 3) throw ERROR_INSUFFICIENT_FUNDS
+      NIP                   	//  lazyS
+      20481 PUSHINT         	//  lazyS '652=20481
+      INMSG_VALUE           	//  lazyS '652=20481 '653
+      25000000 PUSHINT      	//  lazyS '652=20481 '653 '659
+      GEQ                   	//  lazyS '652=20481 '660
+      THROWANYIFNOT         	//  lazyS
+      // 18: return RaffleStorage.fromCell(contract.getData())
+      c4 PUSH               	//  lazyS '671
+      // 88: var storage = lazy RaffleStorage.load()
+      CTOS                  	//  lazyS lazyS
+      // 90: assert (storage.nextRewardIndex + 1 < storage.maxRewards) throw ERROR_REWARD_LIMIT_REACHED
+      LDMSGADDR             	//  lazyS '675 lazyS
+      64 LDSLICE            	//  lazyS '675 '677 lazyS
+      32 LDU                	//  lazyS '675 '677 storage.maxRewards lazyS
+      256 LDSLICE           	//  lazyS '675 '677 storage.maxRewards '681 lazyS
+      LDREF                 	//  lazyS '675 '677 storage.maxRewards '681 '682 lazyS
+      LDREF                 	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode lazyS
+      64 LDU                	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity lazyS
+      32 PLDU               	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex
+      12289 PUSHINT         	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex '688=12289
+      OVER                  	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex '688=12289 storage.nextRewardIndex
+      INC                   	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex '688=12289 '690
+      s7 PUSH               	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex '688=12289 '690 storage.maxRewards
+      LESS                  	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex '688=12289 '691
+      THROWANYIFNOT         	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex
+      // 92: random.setSeed(blockchain.currentBlockLogicalTime())
+      BLOCKLT               	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex '693
+      SETRAND               	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex
+      // 93: val rewardIndex = random.range(storage.participantQuantity)
+      OVER                  	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex storage.participantQuantity
+      RAND                  	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex rewardIndex
+      // 95: val raffleParticipantAddress = calculateRaffleParticipantAddress(contract.getAddress(), rewardIndex, storage.participantCode)
+      MYADDR                	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex rewardIndex '703
+      // 77: val data: RaffleParticipantStorage = { raffleAddress, participantIndex, userAddress: createAddressNone() }
+      b{00} PUSHSLICE       	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex data.participantIndex data.raffleAddress data.userAddress
+      // 83: data: data.toCell()
+      SWAP
+      NEWC                  	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex data.participantIndex data.userAddress data.raffleAddress b
+      STSLICE               	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex data.participantIndex data.userAddress b
+      s1 s2 XCHG            	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex data.userAddress data.participantIndex b
+      64 STU                	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex data.userAddress b
+      OVER                  	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex data.userAddress b data.userAddress
+      ISNULL                	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex data.userAddress b '719
+      IF:<{                 	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex data.userAddress b
+        NIP                 	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex b
+        b{0} STSLICECONST   	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex b
+      }>ELSE<{              	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex data.userAddress b
+        b{1} STSLICECONST   	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex data.userAddress b
+        STSLICE             	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex b
+      }>
+      ENDC                  	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex '724
+      // 79: return
+      s3 PUSH               	//  lazyS '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex raffleParticipantAddress.stateInit.USlot2 raffleParticipantAddress.stateInit.USlot1
+      // 96: val participantRewardMessage = createMessage(
+      s0 s10 XCHG           	//  raffleParticipantAddress.stateInit.USlot1 '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex raffleParticipantAddress.stateInit.USlot2 lazyS
+      PLDREF                	//  raffleParticipantAddress.stateInit.USlot1 '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex raffleParticipantAddress.stateInit.USlot2 inMessageBody.USlot2
+      // 98: dest: raffleParticipantAddress.buildAddress()
+      s0 s10 XCHG
+      // 99: value: RAFFLE_PARTICIPANT_REWARD_NOTIFICATION_OPERATION_FEE
+      5000000 PUSHINT       	//  inMessageBody.USlot2 '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex raffleParticipantAddress.stateInit.USlot2 raffleParticipantAddress.stateInit.USlot1 '732=5000000
+      // 98: dest: raffleParticipantAddress.buildAddress()
+      s0 s2 XCHG            	//  inMessageBody.USlot2 '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex '732=5000000 raffleParticipantAddress.stateInit.USlot1 raffleParticipantAddress.stateInit.USlot2
+                       // code data
+          DUP2            // code data code data
+          HASHCU
+          SWAP
+          HASHCU          // code data dataHash codeHash
+          SWAP2           // dataHash codeHash code data
+          CDEPTH
+          SWAP
+          CDEPTH          // dataHash codeHash dataDepth codeDepth
+          NEWC
+          x{020134} STSLICECONST // store refs_descriptor | bits_descriptor | data
+          16 STU                 // store codeDepth
+          16 STU                 // store dataDepth
+          256 STU                // store codeHash
+          256 STU                // store dataHash
+          ONE HASHEXT_SHA256	//  inMessageBody.USlot2 '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex '732=5000000 '740
+      NEWC                  	//  inMessageBody.USlot2 '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex '732=5000000 '740 '739
+      b{10000000000} STSLICECONST	//  inMessageBody.USlot2 '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex '732=5000000 '740 '739
+      256 STU               	//  inMessageBody.USlot2 '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex '732=5000000 '739
+      // 96: val participantRewardMessage = createMessage(
+      NEWC                  	//  inMessageBody.USlot2 '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex '732=5000000 '739 b
+      b{011000} STSLICECONST	//  inMessageBody.USlot2 '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex '732=5000000 '739 b
+      STB                   	//  inMessageBody.USlot2 '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex '732=5000000 b
+      SWAP                  	//  inMessageBody.USlot2 '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex b '732=5000000
+      STGRAMS               	//  inMessageBody.USlot2 '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex b
+      322371633 PUSHINT
+      139 STUR              	//  inMessageBody.USlot2 '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity storage.nextRewardIndex b
+      s1 s9 XCHG            	//  storage.nextRewardIndex '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity inMessageBody.USlot2 b
+      STREF                 	//  storage.nextRewardIndex '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity b
+      ENDC                  	//  storage.nextRewardIndex '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity participantRewardMessage
+      // 104: participantRewardMessage.send(SEND_MODE_PAY_FEES_SEPARATELY)
+      1 PUSHINT             	//  storage.nextRewardIndex '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity participantRewardMessage '817=1
+      SENDRAWMSG            	//  storage.nextRewardIndex '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.participantQuantity
+      // 106: storage.nextRewardIndex += 1
+      s0 s7 XCHG            	//  storage.participantQuantity '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.nextRewardIndex
+      INC                   	//  storage.participantQuantity '675 '677 storage.maxRewards '681 '682 storage.participantCode storage.nextRewardIndex
+      // 22: contract.setData(self.toCell())
+      s0 s6 XCHG
+      NEWC                  	//  storage.participantQuantity storage.nextRewardIndex '677 storage.maxRewards '681 '682 storage.participantCode '675 b
+      STSLICE               	//  storage.participantQuantity storage.nextRewardIndex '677 storage.maxRewards '681 '682 storage.participantCode b
+      s1 s5 XCHG            	//  storage.participantQuantity storage.nextRewardIndex storage.participantCode storage.maxRewards '681 '682 '677 b
+      STSLICE               	//  storage.participantQuantity storage.nextRewardIndex storage.participantCode storage.maxRewards '681 '682 b
+      s1 s3 XCHG            	//  storage.participantQuantity storage.nextRewardIndex storage.participantCode '682 '681 storage.maxRewards b
+      32 STU                	//  storage.participantQuantity storage.nextRewardIndex storage.participantCode '682 '681 b
+      STSLICE               	//  storage.participantQuantity storage.nextRewardIndex storage.participantCode '682 b
+      STREF                 	//  storage.participantQuantity storage.nextRewardIndex storage.participantCode b
+      STREF                 	//  storage.participantQuantity storage.nextRewardIndex b
+      s1 s2 XCHG            	//  storage.nextRewardIndex storage.participantQuantity b
+      64 STU                	//  storage.nextRewardIndex b
+      32 STU                	//  b
+      ENDC                  	//  '825
+      c4 POP                	// 
+    }>                      	//  in.body lazyS
+    // 111: assert (inMessage.body.isEmpty()) throw 0xFFFF
+    DROP                    	//  in.body
+    16 PUSHPOW2DEC          	//  in.body '826=65535
+    SWAP                    	//  '826=65535 in.body
+    SEMPTY                  	//  '826=65535 '827
+    THROWANYIFNOT           	// 
+  }>
+  // contracts/raffle.tolk:116:5
+  staticData() PROC:<{        	// 
+    // 18: return RaffleStorage.fromCell(contract.getData())
+    c4 PUSH                 	//  '9
+    // 117: val storage = lazy RaffleStorage.load()
+    CTOS                    	//  lazyS
+    // 118: return (storage.deadline, storage.maxRewards, storage.conditions, storage.participantQuantity, storage.nextRewardIndex)
+    LDMSGADDR               	//  '13 lazyS
+    NIP                     	//  lazyS
+    64 LDU                  	//  storage.deadline lazyS
+    32 LDU                  	//  storage.deadline storage.maxRewards lazyS
+    256 LDSLICE             	//  storage.deadline storage.maxRewards storage.conditions lazyS
+    64 LDU                  	//  storage.deadline storage.maxRewards storage.conditions storage.participantQuantity lazyS
+    32 PLDU                 	//  storage.deadline storage.maxRewards storage.conditions storage.participantQuantity storage.nextRewardIndex
+  }>
+  // contracts/raffle.tolk:121:5
+  raffleCandidateAddress() PROC:<{	//  userAddress
+    // 18: return RaffleStorage.fromCell(contract.getData())
+    c4 PUSH                 	//  userAddress '10
+    // 122: val storage = lazy RaffleStorage.load()
+    CTOS                    	//  userAddress lazyS
+    // 123: val candidateAddress = calculateRaffleCandidateAddress(contract.getAddress(), userAddress, storage.candidateCode)
+    PLDREF                  	//  userAddress storage.candidateCode
+    MYADDR                  	//  userAddress storage.candidateCode '22
+    // 65: val data: RaffleCandidateStorage = { raffleAddress, userAddress, conditions: createBits256None(), isMatched: false, telegramID: null, participantIndex: null }
+    x{0000000000000000000000000000000000000000000000000000000000000000} PUSHSLICE	//  userAddress storage.candidateCode '22 '36
+    PUSHNULL                	//  userAddress storage.candidateCode '22 '36 '38
+    PUSHNULL                	//  data.userAddress storage.candidateCode data.raffleAddress data.conditions data.telegramID data.participantIndex
+    // 71: data: data.toCell()
+    s0 s3 XCHG
+    NEWC                    	//  data.userAddress storage.candidateCode data.participantIndex data.conditions data.telegramID data.raffleAddress b
+    STSLICE                 	//  data.userAddress storage.candidateCode data.participantIndex data.conditions data.telegramID b
+    s1 s5 XCHG              	//  data.telegramID storage.candidateCode data.participantIndex data.conditions data.userAddress b
+    STSLICE                 	//  data.telegramID storage.candidateCode data.participantIndex data.conditions b
+    OVER                    	//  data.telegramID storage.candidateCode data.participantIndex data.conditions b data.conditions
+    SBITREFS                	//  data.telegramID storage.candidateCode data.participantIndex data.conditions b '43 '44
+    9 THROWIF               	//  data.telegramID storage.candidateCode data.participantIndex data.conditions b '43
+    8 PUSHPOW2              	//  data.telegramID storage.candidateCode data.participantIndex data.conditions b '43 '48=256
+    EQUAL                   	//  data.telegramID storage.candidateCode data.participantIndex data.conditions b '47
+    9 THROWIFNOT            	//  data.telegramID storage.candidateCode data.participantIndex data.conditions b
+    STSLICE                 	//  data.telegramID storage.candidateCode data.participantIndex b
+    b{0} STSLICECONST       	//  data.telegramID storage.candidateCode data.participantIndex b
+    s3 PUSH                 	//  data.telegramID storage.candidateCode data.participantIndex b data.telegramID
+    ISNULL                  	//  data.telegramID storage.candidateCode data.participantIndex b '51
+    IF:<{                   	//  data.telegramID storage.candidateCode data.participantIndex b
+      s3 POP                	//  b storage.candidateCode data.participantIndex
+      s0 s2 XCHG            	//  data.participantIndex storage.candidateCode b
+      b{0} STSLICECONST     	//  data.participantIndex storage.candidateCode b
+    }>ELSE<{                	//  data.telegramID storage.candidateCode data.participantIndex b
+      b{1} STSLICECONST     	//  data.telegramID storage.candidateCode data.participantIndex b
+      s1 s3 XCHG            	//  data.participantIndex storage.candidateCode data.telegramID b
+      64 STU                	//  data.participantIndex storage.candidateCode b
+    }>
+    s2 PUSH                 	//  data.participantIndex storage.candidateCode b data.participantIndex
+    ISNULL                  	//  data.participantIndex storage.candidateCode b '57
+    IF:<{                   	//  data.participantIndex storage.candidateCode b
+      1 2 BLKDROP2          	//  storage.candidateCode b
+      b{0} STSLICECONST     	//  storage.candidateCode b
+    }>ELSE<{                	//  data.participantIndex storage.candidateCode b
+      b{1} STSLICECONST     	//  data.participantIndex storage.candidateCode b
+      s1 s2 XCHG            	//  storage.candidateCode data.participantIndex b
+      64 STU                	//  storage.candidateCode b
+    }>
+    ENDC                    	//  candidateAddress.stateInit.USlot1 candidateAddress.stateInit.USlot2
+    // 124: return address.fromValidBuilder(candidateAddress.buildAddress())
+                     // code data
+        DUP2            // code data code data
+        HASHCU
+        SWAP
+        HASHCU          // code data dataHash codeHash
+        SWAP2           // dataHash codeHash code data
+        CDEPTH
+        SWAP
+        CDEPTH          // dataHash codeHash dataDepth codeDepth
+        NEWC
+        x{020134} STSLICECONST // store refs_descriptor | bits_descriptor | data
+        16 STU                 // store codeDepth
+        16 STU                 // store dataDepth
+        256 STU                // store codeHash
+        256 STU                // store dataHash
+        ONE HASHEXT_SHA256  	//  '73
+    NEWC                    	//  '73 '72
+    b{10000000000} STSLICECONST	//  '73 '72
+    256 STU                 	//  '72
+    ENDC
+    CTOS                    	//  '92
+  }>
+  // contracts/raffle.tolk:127:5
+  raffleParticipantAddress() PROC:<{	//  participantIndex
+    // 18: return RaffleStorage.fromCell(contract.getData())
+    c4 PUSH                 	//  participantIndex '10
+    // 128: val storage = lazy RaffleStorage.load()
+    CTOS                    	//  participantIndex lazyS
+    // 129: val participantAddress = calculateRaffleParticipantAddress(contract.getAddress(), participantIndex, storage.participantCode)
+    LDREF                   	//  participantIndex '14 lazyS
+    NIP                     	//  participantIndex lazyS
+    PLDREF                  	//  participantIndex storage.participantCode
+    MYADDR                  	//  participantIndex storage.participantCode '23
+    // 77: val data: RaffleParticipantStorage = { raffleAddress, participantIndex, userAddress: createAddressNone() }
+    b{00} PUSHSLICE         	//  data.participantIndex storage.participantCode data.raffleAddress data.userAddress
+    // 83: data: data.toCell()
+    SWAP
+    NEWC                    	//  data.participantIndex storage.participantCode data.userAddress data.raffleAddress b
+    STSLICE                 	//  data.participantIndex storage.participantCode data.userAddress b
+    s1 s3 XCHG              	//  data.userAddress storage.participantCode data.participantIndex b
+    64 STU                  	//  data.userAddress storage.participantCode b
+    s2 PUSH                 	//  data.userAddress storage.participantCode b data.userAddress
+    ISNULL                  	//  data.userAddress storage.participantCode b '39
+    IF:<{                   	//  data.userAddress storage.participantCode b
+      1 2 BLKDROP2          	//  storage.participantCode b
+      b{0} STSLICECONST     	//  storage.participantCode b
+    }>ELSE<{                	//  data.userAddress storage.participantCode b
+      b{1} STSLICECONST     	//  data.userAddress storage.participantCode b
+      s1 s2 XCHG            	//  storage.participantCode data.userAddress b
+      STSLICE               	//  storage.participantCode b
+    }>
+    ENDC                    	//  participantAddress.stateInit.USlot1 participantAddress.stateInit.USlot2
+    // 130: return address.fromValidBuilder(participantAddress.buildAddress())
+                     // code data
+        DUP2            // code data code data
+        HASHCU
+        SWAP
+        HASHCU          // code data dataHash codeHash
+        SWAP2           // dataHash codeHash code data
+        CDEPTH
+        SWAP
+        CDEPTH          // dataHash codeHash dataDepth codeDepth
+        NEWC
+        x{020134} STSLICECONST // store refs_descriptor | bits_descriptor | data
+        16 STU                 // store codeDepth
+        16 STU                 // store dataDepth
+        256 STU                // store codeHash
+        256 STU                // store dataHash
+        ONE HASHEXT_SHA256  	//  '54
+    NEWC                    	//  '54 '53
+    b{10000000000} STSLICECONST	//  '54 '53
+    256 STU                 	//  '53
+    ENDC
+    CTOS                    	//  '73
+  }>
+}END>c

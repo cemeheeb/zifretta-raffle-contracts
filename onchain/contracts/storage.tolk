@@ -1,5 +1,5 @@
 import "constants"
-import "@stdlib/common"
+import "utils"
 
 struct RaffleStorage {
     // state init:
@@ -12,6 +12,7 @@ struct RaffleStorage {
     // after initialization state
     participantQuantity: uint64; // default: 0
     nextRewardIndex: uint32; // default: 0
+    winners: cell?
 }
 
 fun RaffleStorage.load() {
@@ -57,10 +58,6 @@ fun RaffleParticipantStorage.save(self) {
     contract.setData(self.toCell())
 }
 
-@pure
-fun createBits256None(): bits256
-    asm "x{0000000000000000000000000000000000000000000000000000000000000000} PUSHSLICE"
-
 fun calculateRaffleCandidateAddress(raffleAddress: address, userAddress: address, code: cell): AutoDeployAddress {
     val data: RaffleCandidateStorage = { raffleAddress, userAddress, conditions: createBits256None(), isMatched: false, telegramID: null, participantIndex: null };
 
@@ -74,7 +71,7 @@ fun calculateRaffleCandidateAddress(raffleAddress: address, userAddress: address
 }
 
 fun calculateRaffleParticipantAddress(raffleAddress: address, participantIndex: uint64, code: cell): AutoDeployAddress {
-    val data: RaffleParticipantStorage = { raffleAddress, participantIndex, userAddress: createAddressNone() };
+    val data: RaffleParticipantStorage = { raffleAddress, participantIndex, userAddress: null };
 
     return {
         workchain: MY_WORKCHAIN,

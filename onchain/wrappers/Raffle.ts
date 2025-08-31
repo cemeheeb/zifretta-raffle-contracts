@@ -29,6 +29,7 @@ export type RaffleStaticData = {
     conditions: RaffleConditions;
     participantsQuantity: bigint;
     nextRewardIndex: bigint;
+    winners: bigint[];
 }
 
 function raffleConditionConfigurationToBits256(configuration: RaffleConditions) {
@@ -55,6 +56,7 @@ export async function raffleConfigurationToCell(configuration: RaffleConfigurati
       .storeRef(raffleParticipantCode)
       .storeUint(0, 64)
       .storeUint(0, 32)
+      .storeMaybeRef(null)
       .endCell();
 }
 
@@ -168,7 +170,8 @@ export class Raffle implements Contract {
             maxRewards,
             conditions,
             participantsQuantity,
-            nextRewardIndex
+            nextRewardIndex,
+            winners: []
         };
     }
 

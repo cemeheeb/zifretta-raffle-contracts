@@ -35,7 +35,7 @@ describe('Raffle', () => {
             {
               ownerAddress: deployer.address,
               deadline: BigInt(jest.now() + 100000),
-              maxRewards: 20n,
+              maxRewards: 3n,
               conditions: {
                 blackTicketPurchased: BigInt(2),
                 whiteTicketMinted: BigInt(2)
@@ -70,7 +70,7 @@ describe('Raffle', () => {
     for (const user of users) {
 
       const registerCandidateResult = await raffle.sendRegisterCandidate(user.getSender(), {
-        value: toNano("0.1"),
+        value: toNano("0.2"),
         telegramID: 123n
       });
       const raffleCandidateAddress = await raffle.getRaffleCandidateAddress(user.address);
@@ -96,7 +96,7 @@ describe('Raffle', () => {
     let userIndex = 0;
     for (const user of users) {
       const registerCandidateResult = await raffle.sendRegisterCandidate(user.getSender(), {
-        value: toNano("0.1"),
+        value: toNano("0.2"),
         telegramID: 123n
       });
       const raffleCandidateAddress = await raffle.getRaffleCandidateAddress(user.address);
@@ -113,7 +113,7 @@ describe('Raffle', () => {
 
       // Отправка части
       const setConditionsAResult = await raffle.sendConditions(deployer.getSender(), {
-        value: toNano("0.1"),
+        value: toNano("0.2"),
         userAddress: user.address,
         conditions: {
           blackTicketPurchased: 1n,
@@ -142,7 +142,7 @@ describe('Raffle', () => {
       });
 
       const setConditionsBResult = await raffle.sendConditions(deployer.getSender(), {
-        value: toNano("0.1"),
+        value: toNano("0.2"),
         userAddress: user.address,
         conditions: {
           blackTicketPurchased: 2n,
@@ -153,13 +153,15 @@ describe('Raffle', () => {
       expect(setConditionsBResult.transactions).toHaveTransaction({
         from: raffleCandidate.address,
         to: raffle.address,
-        op: OperationCodes.OP_RAFFLE_APPROVE
+        op: OperationCodes.OP_RAFFLE_APPROVE,
+        success: true
       });
 
       expect(setConditionsBResult.transactions).toHaveTransaction({
         from: raffle.address,
         to: raffleCandidate.address,
-        op: OperationCodes.OP_RAFFLE_CANDIDATE_SET_PARTICIPANT_INDEX
+        op: OperationCodes.OP_RAFFLE_CANDIDATE_SET_PARTICIPANT_INDEX,
+        success: true
       });
 
       // Должен увеличится счетчик аппрувнутых участников
@@ -167,6 +169,7 @@ describe('Raffle', () => {
       expect(staticData.participantsQuantity).toBe(BigInt(++userIndex));
 
       const participantIndex = await raffleCandidate.getParticipantIndex();
+      console.warn({participantIndex});
       if (participantIndex != null) {
         const raffleParticipantAddress = await raffle.getRaffleParticipantAddress(participantIndex!);
         let raffleParticipant: SandboxContract<RaffleParticipant> = blockchain.openContract(
@@ -185,8 +188,13 @@ describe('Raffle', () => {
       expect(participantIndex).toBeDefined();
     }
 
+    console.warn(await raffle.getRaffleParticipantAddress(2));
+
+    const staticData = await raffle.getStaticData();
+    expect(staticData.participantsQuantity).toBe(5n);
+
     const setRaffleNextAResult = await raffle.sendRaffleNext(deployer.getSender(), {
-      value: toNano("0.1"),
+      value: toNano("0.2"),
       message: "Congratulations! You are the winner!"
     });
 

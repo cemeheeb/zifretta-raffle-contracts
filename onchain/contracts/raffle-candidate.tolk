@@ -8,8 +8,6 @@ import "constants"
 type AllowedMessageCandidate = RaffleCandidateInitialize | RaffleCandidateSetConditions | RaffleCandidateSetParticipantIndex;
 
 fun onInternalMessage(inMessage: InMessage) {
-    reserveToncoinsOnBalance(MIN_TONS_FOR_CANDIDATE_STORAGE, RESERVE_MODE_EXACT_AMOUNT);
-
     var storage = lazy RaffleCandidateStorage.load();
 
     assert (inMessage.senderAddress == storage.raffleAddress) throw ERROR_NOT_AUTHORIZED;
@@ -20,12 +18,22 @@ fun onInternalMessage(inMessage: InMessage) {
         RaffleCandidateInitialize => {
             storage.telegramID = inMessageBody.telegramID;
             storage.save();
+
+            val excessMessage = createMessage({
+                bounce: false,
+                dest: inMessageBody.recipientAddress,
+                value: 0,
+                body: createEmptyCell(),
+            });
+
+            excessMessage.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE | SEND_MODE_IGNORE_ERRORS);
         }
         RaffleCandidateSetConditions => {
             assert (storage.isMatched == false) throw ERROR_ALREADY_MATCHED;
 
             storage.conditions = inMessageBody.conditions;
             storage.isMatched = inMessageBody.isMatched;
+            storage.save();
 
             if (inMessageBody.isMatched) {
                 val approveMessage = createMessage({
@@ -37,19 +45,19 @@ fun onInternalMessage(inMessage: InMessage) {
                     },
                 });
 
-                approveMessage.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
+                reserveToncoinsOnBalance(MIN_TONS_FOR_RAFFLE_CANDIDATE_STORAGE, RESERVE_MODE_EXACT_AMOUNT);
+                approveMessage.send(SEND_MODE_CARRY_ALL_BALANCE);
             } else {
                 val excessMessage = createMessage({
-                    bounce: true,
+                    bounce: false,
                     dest: inMessageBody.recipientAddress,
                     value: 0,
                     body: createEmptyCell(),
                 });
 
-                excessMessage.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
+                reserveToncoinsOnBalance(MIN_TONS_FOR_RAFFLE_CANDIDATE_STORAGE, RESERVE_MODE_EXACT_AMOUNT);
+                excessMessage.send(SEND_MODE_CARRY_ALL_BALANCE | SEND_MODE_IGNORE_ERRORS);
             }
-
-            storage.save();
         }
         RaffleCandidateSetParticipantIndex => {
             storage.participantIndex = inMessageBody.participantIndex;

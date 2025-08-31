@@ -8,7 +8,6 @@ import "errors"
 type AllowedMessageParticipant = RaffleParticipantSetUserAddress | RaffleParticipantRewardNotification;
 
 fun onInternalMessage(inMessage: InMessage) {
-    reserveToncoinsOnBalance(MIN_TONS_FOR_PARTICIPANT_STORAGE, RESERVE_MODE_EXACT_AMOUNT | RESERVE_MODE_BOUNCE_ON_ACTION_FAIL);
 
     var storage = lazy RaffleParticipantStorage.load();
     assert (storage.raffleAddress == inMessage.senderAddress) throw ERROR_NOT_AUTHORIZED;
@@ -30,7 +29,7 @@ fun onInternalMessage(inMessage: InMessage) {
                 body: inMessageBody.message,
             });
 
-            excessMessage.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
+            excessMessage.send(SEND_MODE_CARRY_ALL_BALANCE);
         }
 
         else => {
