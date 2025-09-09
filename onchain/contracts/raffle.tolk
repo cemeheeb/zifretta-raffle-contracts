@@ -108,7 +108,7 @@ fun onInternalMessage(inMessage: InMessage) {
             assert (inMessage.valueCoins >= MIN_TONS_FOR_RAFFLE_PARTICIPANT_STORAGE + RAFFLE_NEXT_OPERATION_FEE) throw ERROR_INSUFFICIENT_FUNDS;
             var storage = lazy RaffleStorage.load();
 
-            assert (storage.participantQuantity >= storage.maxRewards) throw ERROR_NOT_ENOUGH_USERS;
+            assert (storage.participantQuantity > storage.maxRewards + 1) throw ERROR_NOT_ENOUGH_USERS;
             assert (storage.nextRewardIndex + 1 < storage.maxRewards) throw ERROR_REWARD_LIMIT_REACHED;
 
             random.initialize();
@@ -126,7 +126,7 @@ fun onInternalMessage(inMessage: InMessage) {
                     // if already winner, wide search nearest participants before-first, after-last
                     while (success) {
                         offset += 1;
-                        if (rewardIndex - offset > 0) {
+                        if (rewardIndex - offset >= 0) {
                             (_, success) = storage.winners.uDictGetRef(64, rewardIndex - offset);
                         }
                         if (success && rewardIndex + offset < storage.participantQuantity) {

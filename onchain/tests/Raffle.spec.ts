@@ -34,7 +34,8 @@ describe('Raffle', () => {
         await Raffle.createFromConfig(
             {
               ownerAddress: deployer.address,
-              deadline: BigInt(jest.now() + 100000),
+              commencement: BigInt(jest.now()),
+              deadline: BigInt(jest.now() + 1000000),
               maxRewards: 3n,
               conditions: {
                 blackTicketPurchased: BigInt(2),

@@ -1,7 +1,7 @@
 [
   {
     "label": "current",
-    "createdAt": "2025-08-31T14:56:40.475Z",
+    "createdAt": "2025-09-06T05:52:02.118Z",
     "result": {
       "Raffle": {
         "sendDeploy": {
@@ -15,7 +15,7 @@
           },
           "bits": {
             "kind": "init",
-            "value": "16423"
+            "value": "16974"
           }
         },
         "0x13370014": {
@@ -29,7 +29,7 @@
           },
           "bits": {
             "kind": "init",
-            "value": "16423"
+            "value": "16974"
           }
         },
         "send": {
@@ -43,7 +43,7 @@
           },
           "bits": {
             "kind": "init",
-            "value": "16423"
+            "value": "16974"
           }
         },
         "sendRegisterCandidate": {
@@ -57,13 +57,13 @@
           },
           "bits": {
             "kind": "init",
-            "value": "16423"
+            "value": "16974"
           }
         },
         "0x13370010": {
           "gasUsed": {
             "kind": "init",
-            "value": "4845"
+            "value": "4945"
           },
           "cells": {
             "kind": "init",
@@ -71,7 +71,7 @@
           },
           "bits": {
             "kind": "init",
-            "value": "16423"
+            "value": "16974"
           }
         },
         "0x13370020": {
@@ -85,7 +85,7 @@
           },
           "bits": {
             "kind": "init",
-            "value": "16423"
+            "value": "16974"
           }
         },
         "sendConditions": {
@@ -99,13 +99,13 @@
           },
           "bits": {
             "kind": "init",
-            "value": "16423"
+            "value": "16974"
           }
         },
         "0x13370011": {
           "gasUsed": {
             "kind": "init",
-            "value": "6388"
+            "value": "6620"
           },
           "cells": {
             "kind": "init",
@@ -113,7 +113,7 @@
           },
           "bits": {
             "kind": "init",
-            "value": "16423"
+            "value": "16974"
           }
         },
         "0x13370021": {
@@ -127,13 +127,13 @@
           },
           "bits": {
             "kind": "init",
-            "value": "16423"
+            "value": "16974"
           }
         },
         "0x13370012": {
           "gasUsed": {
             "kind": "init",
-            "value": "10332"
+            "value": "10662"
           },
           "cells": {
             "kind": "init",
@@ -141,7 +141,7 @@
           },
           "bits": {
             "kind": "init",
-            "value": "16423"
+            "value": "16974"
           }
         },
         "0x13370022": {
@@ -155,7 +155,7 @@
           },
           "bits": {
             "kind": "init",
-            "value": "16423"
+            "value": "16974"
           }
         },
         "0x13370030": {
@@ -169,7 +169,7 @@
           },
           "bits": {
             "kind": "init",
-            "value": "16423"
+            "value": "16974"
           }
         },
         "sendRaffleNext": {
@@ -183,13 +183,13 @@
           },
           "bits": {
             "kind": "init",
-            "value": "16423"
+            "value": "16974"
           }
         },
         "0x13370013": {
           "gasUsed": {
             "kind": "init",
-            "value": "7401"
+            "value": "7429"
           },
           "cells": {
             "kind": "init",
@@ -197,7 +197,7 @@
           },
           "bits": {
             "kind": "init",
-            "value": "16423"
+            "value": "16974"
           }
         },
         "0x13370031": {
@@ -211,7 +211,7 @@
           },
           "bits": {
             "kind": "init",
-            "value": "16423"
+            "value": "16974"
           }
         },
         "0x436f6e67": {
@@ -225,7 +225,7 @@
           },
           "bits": {
             "kind": "init",
-            "value": "16423"
+            "value": "16974"
           }
         }
       }

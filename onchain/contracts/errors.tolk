@@ -1,6 +1,8 @@
 
 // these error codes are quite strange, but they are exactly the same as in FunC implementation
 
+const ERROR_INVALID_TELEGRAM_ID = 0x9001;
+const ERROR_ALREADY_REGISTERED = 0x8001;
 const ERROR_INVALID_PARTICIPANT = 0x7001;
 const ERROR_ALREADY_MATCHED = 0x6001;
 const ERROR_INSUFFICIENT_FUNDS = 0x5001;

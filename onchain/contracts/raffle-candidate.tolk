@@ -16,6 +16,8 @@ fun onInternalMessage(inMessage: InMessage) {
 
     match (inMessageBody) {
         RaffleCandidateInitialize => {
+            assert (inMessageBody.telegramID > 0) throw ERROR_INVALID_TELEGRAM_ID
+            assert (storage.telegramID == 0) throw ERROR_ALREADY_REGISTERED
             storage.telegramID = inMessageBody.telegramID;
             storage.save();
 
