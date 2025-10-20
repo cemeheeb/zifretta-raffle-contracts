@@ -8,56 +8,66 @@ PROGRAM{
   DECLPROC calculateRaffleCandidateAddress()
   DECLPROC calculateRaffleParticipantAddress()
   0 DECLMETHOD onInternalMessage()
-  66440 DECLMETHOD conditions()
-  125994 DECLMETHOD participantIndex()
-  // 4 functions inlined in-place:
-  // - RaffleCandidateStorage.load (3 calls)
-  // - RaffleCandidateStorage.save (3 calls)
+  118964 DECLMETHOD raffleCandidateData()
+  // 5 functions inlined in-place:
   // - SnakeString.unpackFromSlice (0 calls)
   // - SnakeString.packToBuilder (0 calls)
-  // contracts/storage.tolk:17  (note: function never called!)
+  // - RaffleCandidateStorage.load (3 calls)
+  // - RaffleCandidateStorage.save (4 calls)
+  // - onBouncedMessage (0 calls)
+  // contracts/storage.tolk:25  (note: function never called!)
   RaffleStorage.load() PROC:<{	// 
-    // 18: return RaffleStorage.fromCell(contract.getData())
+    // 26: return RaffleStorage.fromCell(contract.getData())
     c4 PUSH                 	//  '0
     CTOS                    	//  s
     LDMSGADDR               	//  '4 s
-    64 LDU                  	//  '4 '6 s
+    32 LDU                  	//  '4 '6 s
     32 LDU                  	//  '4 '6 '8 s
     256 LDSLICE             	//  '4 '6 '8 '10 s
     LDREF                   	//  '4 '6 '8 '10 '11 s
     LDREF                   	//  '4 '6 '8 '10 '11 '12 s
     64 LDU                  	//  '4 '6 '8 '10 '11 '12 '14 s
-    32 LDU                  	//  '4 '6 '8 '10 '11 '12 '14 '16 s
-    ENDS                    	//  '4 '6 '8 '10 '11 '12 '14 '16
+    64 LDI                  	//  '4 '6 '8 '10 '11 '12 '14 '16 s
+    64 LDU                  	//  '4 '6 '8 '10 '11 '12 '14 '16 '18 s
+    64 LDU                  	//  '4 '6 '8 '10 '11 '12 '14 '16 '18 '20 s
+    8 LDU                   	//  '4 '6 '8 '10 '11 '12 '14 '16 '18 '20 '22 s
+    LDOPTREF                	//  '4 '6 '8 '10 '11 '12 '14 '16 '18 '20 '22 '23 s
+    ENDS                    	//  '4 '6 '8 '10 '11 '12 '14 '16 '18 '20 '22 '23
   }>
-  // contracts/storage.tolk:21  (note: function never called!)
-  RaffleStorage.save() PROC:<{	//  self.ownerAddress self.deadline self.maxRewards self.conditions self.candidateCode self.participantCode self.participantQuantity self.nextRewardIndex
-    // 22: contract.setData(self.toCell())
-    s0 s7 XCHG
-    NEWC                    	//  self.nextRewardIndex self.deadline self.maxRewards self.conditions self.candidateCode self.participantCode self.participantQuantity self.ownerAddress b
-    STSLICE                 	//  self.nextRewardIndex self.deadline self.maxRewards self.conditions self.candidateCode self.participantCode self.participantQuantity b
-    s1 s6 XCHG              	//  self.nextRewardIndex self.participantQuantity self.maxRewards self.conditions self.candidateCode self.participantCode self.deadline b
-    64 STU                  	//  self.nextRewardIndex self.participantQuantity self.maxRewards self.conditions self.candidateCode self.participantCode b
-    s1 s4 XCHG              	//  self.nextRewardIndex self.participantQuantity self.participantCode self.conditions self.candidateCode self.maxRewards b
-    32 STU                  	//  self.nextRewardIndex self.participantQuantity self.participantCode self.conditions self.candidateCode b
-    s2 PUSH                 	//  self.nextRewardIndex self.participantQuantity self.participantCode self.conditions self.candidateCode b self.conditions
-    SBITREFS                	//  self.nextRewardIndex self.participantQuantity self.participantCode self.conditions self.candidateCode b '12 '13
-    9 THROWIF               	//  self.nextRewardIndex self.participantQuantity self.participantCode self.conditions self.candidateCode b '12
-    8 PUSHPOW2              	//  self.nextRewardIndex self.participantQuantity self.participantCode self.conditions self.candidateCode b '12 '17=256
-    EQUAL                   	//  self.nextRewardIndex self.participantQuantity self.participantCode self.conditions self.candidateCode b '16
-    9 THROWIFNOT            	//  self.nextRewardIndex self.participantQuantity self.participantCode self.conditions self.candidateCode b
-    s1 s2 XCHG              	//  self.nextRewardIndex self.participantQuantity self.participantCode self.candidateCode self.conditions b
-    STSLICE                 	//  self.nextRewardIndex self.participantQuantity self.participantCode self.candidateCode b
-    STREF                   	//  self.nextRewardIndex self.participantQuantity self.participantCode b
-    STREF                   	//  self.nextRewardIndex self.participantQuantity b
-    64 STU                  	//  self.nextRewardIndex b
-    32 STU                  	//  b
-    ENDC                    	//  '22
+  // contracts/storage.tolk:29  (note: function never called!)
+  RaffleStorage.save() PROC:<{	//  self.ownerAddress self.minCandidateQuantity self.participantDuration self.conditions self.candidateCode self.participantCode self.minCandidateReachedLt self.minCandidateReachedUnixTime self.candidatesQuantity self.participantsQuantity self.winnersQuantity self.winners
+    // 30: contract.setData(self.toCell())
+    s0 s11 XCHG
+    NEWC                    	//  self.winners self.minCandidateQuantity self.participantDuration self.conditions self.candidateCode self.participantCode self.minCandidateReachedLt self.minCandidateReachedUnixTime self.candidatesQuantity self.participantsQuantity self.winnersQuantity self.ownerAddress b
+    STSLICE                 	//  self.winners self.minCandidateQuantity self.participantDuration self.conditions self.candidateCode self.participantCode self.minCandidateReachedLt self.minCandidateReachedUnixTime self.candidatesQuantity self.participantsQuantity self.winnersQuantity b
+    s1 s10 XCHG             	//  self.winners self.winnersQuantity self.participantDuration self.conditions self.candidateCode self.participantCode self.minCandidateReachedLt self.minCandidateReachedUnixTime self.candidatesQuantity self.participantsQuantity self.minCandidateQuantity b
+    32 STU                  	//  self.winners self.winnersQuantity self.participantDuration self.conditions self.candidateCode self.participantCode self.minCandidateReachedLt self.minCandidateReachedUnixTime self.candidatesQuantity self.participantsQuantity b
+    s1 s8 XCHG              	//  self.winners self.winnersQuantity self.participantsQuantity self.conditions self.candidateCode self.participantCode self.minCandidateReachedLt self.minCandidateReachedUnixTime self.candidatesQuantity self.participantDuration b
+    32 STU                  	//  self.winners self.winnersQuantity self.participantsQuantity self.conditions self.candidateCode self.participantCode self.minCandidateReachedLt self.minCandidateReachedUnixTime self.candidatesQuantity b
+    s6 PUSH                 	//  self.winners self.winnersQuantity self.participantsQuantity self.conditions self.candidateCode self.participantCode self.minCandidateReachedLt self.minCandidateReachedUnixTime self.candidatesQuantity b self.conditions
+    SBITREFS                	//  self.winners self.winnersQuantity self.participantsQuantity self.conditions self.candidateCode self.participantCode self.minCandidateReachedLt self.minCandidateReachedUnixTime self.candidatesQuantity b '16 '17
+    9 THROWIF               	//  self.winners self.winnersQuantity self.participantsQuantity self.conditions self.candidateCode self.participantCode self.minCandidateReachedLt self.minCandidateReachedUnixTime self.candidatesQuantity b '16
+    8 PUSHPOW2              	//  self.winners self.winnersQuantity self.participantsQuantity self.conditions self.candidateCode self.participantCode self.minCandidateReachedLt self.minCandidateReachedUnixTime self.candidatesQuantity b '16 '21=256
+    EQUAL                   	//  self.winners self.winnersQuantity self.participantsQuantity self.conditions self.candidateCode self.participantCode self.minCandidateReachedLt self.minCandidateReachedUnixTime self.candidatesQuantity b '20
+    9 THROWIFNOT            	//  self.winners self.winnersQuantity self.participantsQuantity self.conditions self.candidateCode self.participantCode self.minCandidateReachedLt self.minCandidateReachedUnixTime self.candidatesQuantity b
+    s1 s6 XCHG              	//  self.winners self.winnersQuantity self.participantsQuantity self.candidatesQuantity self.candidateCode self.participantCode self.minCandidateReachedLt self.minCandidateReachedUnixTime self.conditions b
+    STSLICE                 	//  self.winners self.winnersQuantity self.participantsQuantity self.candidatesQuantity self.candidateCode self.participantCode self.minCandidateReachedLt self.minCandidateReachedUnixTime b
+    s1 s4 XCHG              	//  self.winners self.winnersQuantity self.participantsQuantity self.candidatesQuantity self.minCandidateReachedUnixTime self.participantCode self.minCandidateReachedLt self.candidateCode b
+    STREF                   	//  self.winners self.winnersQuantity self.participantsQuantity self.candidatesQuantity self.minCandidateReachedUnixTime self.participantCode self.minCandidateReachedLt b
+    s1 s2 XCHG              	//  self.winners self.winnersQuantity self.participantsQuantity self.candidatesQuantity self.minCandidateReachedUnixTime self.minCandidateReachedLt self.participantCode b
+    STREF                   	//  self.winners self.winnersQuantity self.participantsQuantity self.candidatesQuantity self.minCandidateReachedUnixTime self.minCandidateReachedLt b
+    64 STU                  	//  self.winners self.winnersQuantity self.participantsQuantity self.candidatesQuantity self.minCandidateReachedUnixTime b
+    64 STI                  	//  self.winners self.winnersQuantity self.participantsQuantity self.candidatesQuantity b
+    64 STU                  	//  self.winners self.winnersQuantity self.participantsQuantity b
+    64 STU                  	//  self.winners self.winnersQuantity b
+    8 STU                   	//  self.winners b
+    STOPTREF                	//  b
+    ENDC                    	//  '29
     c4 POP                  	// 
   }>
-  // contracts/storage.tolk:52  (note: function never called!)
+  // contracts/storage.tolk:61  (note: function never called!)
   RaffleParticipantStorage.load() PROC:<{	// 
-    // 53: return RaffleParticipantStorage.fromCell(contract.getData())
+    // 62: return RaffleParticipantStorage.fromCell(contract.getData())
     c4 PUSH                 	//  '0
     CTOS                    	//  s
     LDMSGADDR               	//  '4 s
@@ -70,36 +80,54 @@ PROGRAM{
       PUSHNULL              	//  '4 '6 s '7
       SWAP                  	//  '4 '6 '7 s
     }>
-    ENDS                    	//  '4 '6 '7
+    1 LDU                   	//  '4 '6 '7 '14 s
+    SWAP                    	//  '4 '6 '7 s '14
+    IF:<{                   	//  '4 '6 '7 s
+      8 LDU                 	//  '4 '6 '7 '12 s
+    }>ELSE<{                	//  '4 '6 '7 s
+      PUSHNULL              	//  '4 '6 '7 s '12
+      SWAP                  	//  '4 '6 '7 '12 s
+    }>
+    ENDS                    	//  '4 '6 '7 '12
   }>
-  // contracts/storage.tolk:56  (note: function never called!)
-  RaffleParticipantStorage.save() PROC:<{	//  self.raffleAddress self.participantIndex self.userAddress
-    // 57: contract.setData(self.toCell())
-    s0 s2 XCHG
-    NEWC                    	//  self.userAddress self.participantIndex self.raffleAddress b
-    STSLICE                 	//  self.userAddress self.participantIndex b
-    64 STU                  	//  self.userAddress b
-    OVER                    	//  self.userAddress b self.userAddress
-    ISNULL                  	//  self.userAddress b '6
-    IF:<{                   	//  self.userAddress b
+  // contracts/storage.tolk:65  (note: function never called!)
+  RaffleParticipantStorage.save() PROC:<{	//  self.raffleAddress self.participantIndex self.userAddress self.winnerIndex
+    // 66: contract.setData(self.toCell())
+    s0 s3 XCHG
+    NEWC                    	//  self.winnerIndex self.participantIndex self.userAddress self.raffleAddress b
+    STSLICE                 	//  self.winnerIndex self.participantIndex self.userAddress b
+    s1 s2 XCHG              	//  self.winnerIndex self.userAddress self.participantIndex b
+    64 STU                  	//  self.winnerIndex self.userAddress b
+    OVER                    	//  self.winnerIndex self.userAddress b self.userAddress
+    ISNULL                  	//  self.winnerIndex self.userAddress b '7
+    IF:<{                   	//  self.winnerIndex self.userAddress b
+      NIP                   	//  self.winnerIndex b
+      b{0} STSLICECONST     	//  self.winnerIndex b
+    }>ELSE<{                	//  self.winnerIndex self.userAddress b
+      b{1} STSLICECONST     	//  self.winnerIndex self.userAddress b
+      STSLICE               	//  self.winnerIndex b
+    }>
+    OVER                    	//  self.winnerIndex b self.winnerIndex
+    ISNULL                  	//  self.winnerIndex b '12
+    IF:<{                   	//  self.winnerIndex b
       NIP                   	//  b
       b{0} STSLICECONST     	//  b
-    }>ELSE<{                	//  self.userAddress b
-      b{1} STSLICECONST     	//  self.userAddress b
-      STSLICE               	//  b
+    }>ELSE<{                	//  self.winnerIndex b
+      b{1} STSLICECONST     	//  self.winnerIndex b
+      8 STU                 	//  b
     }>
-    ENDC                    	//  '11
+    ENDC                    	//  '18
     c4 POP                  	// 
   }>
-  // contracts/storage.tolk:64  (note: function never called!)
+  // contracts/storage.tolk:69  (note: function never called!)
   calculateRaffleCandidateAddress() PROC:<{	//  raffleAddress userAddress code
-    // 65: val data: RaffleCandidateStorage = { raffleAddress, userAddress, conditions: createBits256None(), isMatched: false, telegramID: null, participantIndex: null }
+    // 70: val data: RaffleCandidateStorage = { raffleAddress, userAddress, conditions: createBits256None(), isMatched: false, telegramID: null, participantIndex: null }
     x{0000000000000000000000000000000000000000000000000000000000000000} PUSHSLICE	//  raffleAddress userAddress code '9
     PUSHNULL                	//  raffleAddress userAddress code '9 '11
     PUSHNULL                	//  data.raffleAddress data.userAddress code data.conditions data.telegramID data.participantIndex
-    // 68: workchain: MY_WORKCHAIN
+    // 73: workchain: MY_WORKCHAIN
     0 PUSHINT               	//  data.raffleAddress data.userAddress code data.conditions data.telegramID data.participantIndex '13=0
-    // 71: data: data.toCell()
+    // 76: data: data.toCell()
     s0 s6 XCHG
     NEWC                    	//  '13=0 data.userAddress code data.conditions data.telegramID data.participantIndex data.raffleAddress b
     STSLICE                 	//  '13=0 data.userAddress code data.conditions data.telegramID data.participantIndex b
@@ -134,235 +162,324 @@ PROGRAM{
       64 STU                	//  '13=0 code b
     }>
     ENDC                    	//  '13=0 code '36
-    // 69: stateInit:
+    // 74: stateInit:
     129 PUSHINT             	//  '13=0 code '36 '37=129
     PUSHNULL                	//  '13=0 code '36 '37=129 '38
     PUSHNULL                	//  '13=0 code '36 '37=129 '38 '39
     s5 PUSH                 	//  '13=0 code '36 '37=129 '38 '39 '40=0
   }>
-  // contracts/storage.tolk:76  (note: function never called!)
+  // contracts/storage.tolk:81  (note: function never called!)
   calculateRaffleParticipantAddress() PROC:<{	//  raffleAddress participantIndex code
-    // 77: val data: RaffleParticipantStorage = { raffleAddress, participantIndex, userAddress: createAddressNone() }
-    b{00} PUSHSLICE         	//  data.raffleAddress data.participantIndex code data.userAddress
-    // 80: workchain: MY_WORKCHAIN
-    0 PUSHINT               	//  data.raffleAddress data.participantIndex code data.userAddress '7=0
-    // 83: data: data.toCell()
-    s0 s4 XCHG
-    NEWC                    	//  '7=0 data.participantIndex code data.userAddress data.raffleAddress b
-    STSLICE                 	//  '7=0 data.participantIndex code data.userAddress b
-    s1 s3 XCHG              	//  '7=0 data.userAddress code data.participantIndex b
-    64 STU                  	//  '7=0 data.userAddress code b
-    s2 PUSH                 	//  '7=0 data.userAddress code b data.userAddress
-    ISNULL                  	//  '7=0 data.userAddress code b '11
-    IF:<{                   	//  '7=0 data.userAddress code b
-      1 2 BLKDROP2          	//  '7=0 code b
-      b{0} STSLICECONST     	//  '7=0 code b
-    }>ELSE<{                	//  '7=0 data.userAddress code b
-      b{1} STSLICECONST     	//  '7=0 data.userAddress code b
-      s1 s2 XCHG            	//  '7=0 code data.userAddress b
-      STSLICE               	//  '7=0 code b
+    // 82: val data: RaffleParticipantStorage = { raffleAddress, participantIndex, userAddress: null, winnerIndex: null }
+    PUSHNULL                	//  raffleAddress participantIndex code '7
+    PUSHNULL                	//  data.raffleAddress data.participantIndex code data.userAddress data.winnerIndex
+    // 85: workchain: MY_WORKCHAIN
+    0 PUSHINT               	//  data.raffleAddress data.participantIndex code data.userAddress data.winnerIndex '9=0
+    // 88: data: data.toCell()
+    s0 s5 XCHG
+    NEWC                    	//  '9=0 data.participantIndex code data.userAddress data.winnerIndex data.raffleAddress b
+    STSLICE                 	//  '9=0 data.participantIndex code data.userAddress data.winnerIndex b
+    s1 s4 XCHG              	//  '9=0 data.winnerIndex code data.userAddress data.participantIndex b
+    64 STU                  	//  '9=0 data.winnerIndex code data.userAddress b
+    OVER                    	//  '9=0 data.winnerIndex code data.userAddress b data.userAddress
+    ISNULL                  	//  '9=0 data.winnerIndex code data.userAddress b '13
+    IF:<{                   	//  '9=0 data.winnerIndex code data.userAddress b
+      NIP                   	//  '9=0 data.winnerIndex code b
+      b{0} STSLICECONST     	//  '9=0 data.winnerIndex code b
+    }>ELSE<{                	//  '9=0 data.winnerIndex code data.userAddress b
+      b{1} STSLICECONST     	//  '9=0 data.winnerIndex code data.userAddress b
+      STSLICE               	//  '9=0 data.winnerIndex code b
     }>
-    ENDC                    	//  '7=0 code '16
-    // 81: stateInit:
-    129 PUSHINT             	//  '7=0 code '16 '17=129
-    PUSHNULL                	//  '7=0 code '16 '17=129 '18
-    PUSHNULL                	//  '7=0 code '16 '17=129 '18 '19
-    s5 PUSH                 	//  '7=0 code '16 '17=129 '18 '19 '20=0
+    s2 PUSH                 	//  '9=0 data.winnerIndex code b data.winnerIndex
+    ISNULL                  	//  '9=0 data.winnerIndex code b '18
+    IF:<{                   	//  '9=0 data.winnerIndex code b
+      1 2 BLKDROP2          	//  '9=0 code b
+      b{0} STSLICECONST     	//  '9=0 code b
+    }>ELSE<{                	//  '9=0 data.winnerIndex code b
+      b{1} STSLICECONST     	//  '9=0 data.winnerIndex code b
+      s1 s2 XCHG            	//  '9=0 code data.winnerIndex b
+      8 STU                 	//  '9=0 code b
+    }>
+    ENDC                    	//  '9=0 code '24
+    // 86: stateInit:
+    129 PUSHINT             	//  '9=0 code '24 '25=129
+    PUSHNULL                	//  '9=0 code '24 '25=129 '26
+    PUSHNULL                	//  '9=0 code '24 '25=129 '26 '27
+    s5 PUSH                 	//  '9=0 code '24 '25=129 '26 '27 '28=0
   }>
   // contracts/raffle-candidate.tolk:10
   onInternalMessage() PROC:<{ 	//  in.body
     // 10: fun onInternalMessage(inMessage: InMessage)
     INMSG_BOUNCED           	//  in.body '1
-    0 THROWIF               	//  in.body
-    // 11: reserveToncoinsOnBalance(MIN_TONS_FOR_CANDIDATE_STORAGE, RESERVE_MODE_EXACT_AMOUNT)
-    10000000 PUSHINT        	//  in.body '5=10000000
-    0 PUSHINT               	//  in.body '5=10000000 '6=0
-    RAWRESERVE              	//  in.body
-    // 37: return RaffleCandidateStorage.fromCell(contract.getData())
-    c4 PUSH                 	//  in.body '14
-    // 13: var storage = lazy RaffleCandidateStorage.load()
+    IFJMP:<{                	//  in.body
+      // 80: in.bouncedBody.skipBouncedPrefix()
+      32 LDU
+      NIP                   	//  s
+      // 83: RaffleApprove.fromSlice(in.bouncedBody)
+      x{13370012} SDBEGINSQ 	//  s '7
+      63 THROWIFNOT         	//  s
+      LDMSGADDR             	//  '11 s
+      NIP                   	//  s
+      LDMSGADDR             	//  '12 s
+      NIP                   	//  s
+      ENDS                  	// 
+      // 45: return RaffleCandidateStorage.fromCell(contract.getData())
+      c4 PUSH               	//  '20
+      // 85: var storage = lazy RaffleCandidateStorage.load()
+      CTOS                  	//  lazyS
+      // 86: storage.isMatched = false
+      LDMSGADDR             	//  '24 lazyS
+      LDMSGADDR             	//  '24 '25 lazyS
+      256 LDSLICE           	//  '24 '25 '27 lazyS
+      1 LDI                 	//  '24 '25 '27 '29 lazyS
+      NIP                   	//  '24 '25 '27 '30
+      // 49: contract.setData(self.toCell())
+      s0 s3 XCHG
+      NEWC                  	//  '30 '25 '27 '24 b
+      STSLICE               	//  '30 '25 '27 b
+      s1 s2 XCHG            	//  '30 '27 '25 b
+      STSLICE               	//  '30 '27 b
+      STSLICE               	//  '30 b
+      b{0} STSLICECONST     	//  '30 b
+      STSLICE               	//  b
+      ENDC                  	//  '34
+      c4 POP                	// 
+    }>                      	//  in.body
+    // 45: return RaffleCandidateStorage.fromCell(contract.getData())
+    c4 PUSH                 	//  in.body '42
+    // 12: var storage = lazy RaffleCandidateStorage.load()
     CTOS                    	//  in.body lazyS
-    // 15: assert (inMessage.senderAddress == storage.raffleAddress) throw ERROR_NOT_AUTHORIZED
+    // 13: assert (inMessage.senderAddress == storage.raffleAddress) throw ERROR_NOT_AUTHORIZED
     LDMSGADDR               	//  in.body storage.raffleAddress lazyS
     LDMSGADDR               	//  in.body storage.raffleAddress storage.userAddress lazyS
     256 LDSLICE             	//  in.body storage.raffleAddress storage.userAddress storage.conditions lazyS
     1 LDI                   	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched lazyS
-    1 LDU                   	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched '26 lazyS
-    SWAP                    	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched lazyS '26
+    1 LDU                   	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched '54 lazyS
+    SWAP                    	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched lazyS '54
     IF:<{                   	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched lazyS
-      64 LDU                	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched '24 lazyS
+      64 LDU                	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched '52 lazyS
     }>ELSE<{                	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched lazyS
-      PUSHNULL              	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched lazyS '24
-      SWAP                  	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched '24 lazyS
+      PUSHNULL              	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched lazyS '52
+      SWAP                  	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched '52 lazyS
     }>                      	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID lazyS
-    1 LDU                   	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID '32 lazyS
-    SWAP                    	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID lazyS '32
+    1 LDU                   	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID '60 lazyS
+    SWAP                    	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID lazyS '60
     IF:<{                   	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID lazyS
-      64 PLDU               	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID '30
+      64 PLDU               	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID '58
     }>ELSE<{                	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID lazyS
       DROP                  	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID
-      PUSHNULL              	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID '30
+      PUSHNULL              	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID '58
     }>                      	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID storage.participantIndex
-    4919 PUSHINT            	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID storage.participantIndex '36=4919
-    INMSG_SRC               	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID storage.participantIndex '36=4919 '37
-    s7 PUSH                 	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID storage.participantIndex '36=4919 '37 storage.raffleAddress
-    SDEQ                    	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID storage.participantIndex '36=4919 '39
+    4919 PUSHINT            	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID storage.participantIndex '64=4919
+    INMSG_SRC               	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID storage.participantIndex '64=4919 '65
+    s7 PUSH                 	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID storage.participantIndex '64=4919 '65 storage.raffleAddress
+    SDEQ                    	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID storage.participantIndex '64=4919 '67
     THROWANYIFNOT           	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID storage.participantIndex
-    // 17: val inMessageBody = lazy AllowedMessageCandidate.fromSlice(inMessage.body)
+    // 15: val inMessageBody = lazy AllowedMessageCandidate.fromSlice(inMessage.body)
     s6 PUSH                 	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID storage.participantIndex lazyS
-    // 19: match (inMessageBody)
-    x{13370020} SDBEGINSQ   	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID storage.participantIndex lazyS '49
+    // 17: match (inMessageBody)
+    x{13370020} SDBEGINSQ   	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID storage.participantIndex lazyS '77
     IFJMP:<{                	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID storage.participantIndex lazyS
-      // 21: storage.telegramID = inMessageBody.telegramID
-      s2 POP                	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched lazyS storage.participantIndex
-      s6 POP                	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.conditions storage.isMatched lazyS
-      64 PLDU               	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID
-      // 41: contract.setData(self.toCell())
-      s0 s4 XCHG
-      NEWC                  	//  storage.participantIndex storage.telegramID storage.userAddress storage.conditions storage.isMatched storage.raffleAddress b
-      STSLICE               	//  storage.participantIndex storage.telegramID storage.userAddress storage.conditions storage.isMatched b
-      s1 s3 XCHG            	//  storage.participantIndex storage.telegramID storage.isMatched storage.conditions storage.userAddress b
-      STSLICE               	//  storage.participantIndex storage.telegramID storage.isMatched storage.conditions b
-      OVER                  	//  storage.participantIndex storage.telegramID storage.isMatched storage.conditions b storage.conditions
-      SBITREFS              	//  storage.participantIndex storage.telegramID storage.isMatched storage.conditions b '56 '57
-      9 THROWIF             	//  storage.participantIndex storage.telegramID storage.isMatched storage.conditions b '56
-      8 PUSHPOW2            	//  storage.participantIndex storage.telegramID storage.isMatched storage.conditions b '56 '61=256
-      EQUAL                 	//  storage.participantIndex storage.telegramID storage.isMatched storage.conditions b '60
-      9 THROWIFNOT          	//  storage.participantIndex storage.telegramID storage.isMatched storage.conditions b
-      STSLICE               	//  storage.participantIndex storage.telegramID storage.isMatched b
-      1 STI                 	//  storage.participantIndex storage.telegramID b
-      OVER                  	//  storage.participantIndex storage.telegramID b storage.telegramID
-      ISNULL                	//  storage.participantIndex storage.telegramID b '64
-      IF:<{                 	//  storage.participantIndex storage.telegramID b
-        NIP                 	//  storage.participantIndex b
-        b{0} STSLICECONST   	//  storage.participantIndex b
-      }>ELSE<{              	//  storage.participantIndex storage.telegramID b
-        b{1} STSLICECONST   	//  storage.participantIndex storage.telegramID b
-        64 STU              	//  storage.participantIndex b
+      // 19: assert (inMessageBody.telegramID > 0) throw ERROR_INVALID_TELEGRAM_ID
+      s7 POP                	//  lazyS storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID storage.participantIndex
+      s0 s6 XCHG            	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID lazyS
+      LDMSGADDR             	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID inMessageBody.USlot2 lazyS
+      64 PLDU               	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID inMessageBody.USlot2 inMessageBody.USlot3
+      36865 PUSHINT         	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID inMessageBody.USlot2 inMessageBody.USlot3 '83=36865
+      OVER                  	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID inMessageBody.USlot2 inMessageBody.USlot3 '83=36865 inMessageBody.USlot3
+      0 GTINT               	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID inMessageBody.USlot2 inMessageBody.USlot3 '83=36865 '85
+      THROWANYIFNOT         	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID inMessageBody.USlot2 inMessageBody.USlot3
+      // 20: assert (storage.telegramID == null) throw ERROR_ALREADY_REGISTERED
+      28673 PUSHINT         	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID inMessageBody.USlot2 inMessageBody.USlot3 '87=28673
+      s0 s3 XCHG            	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.conditions storage.isMatched '87=28673 inMessageBody.USlot2 inMessageBody.USlot3 storage.telegramID
+      ISNULL                	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.conditions storage.isMatched '87=28673 inMessageBody.USlot2 inMessageBody.USlot3 '88
+      s1 s3 XCHG            	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.conditions storage.isMatched inMessageBody.USlot3 inMessageBody.USlot2 '87=28673 '88
+      THROWANYIFNOT         	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID inMessageBody.USlot2
+      // 49: contract.setData(self.toCell())
+      s0 s5 XCHG
+      NEWC                  	//  storage.participantIndex inMessageBody.USlot2 storage.userAddress storage.conditions storage.isMatched storage.telegramID storage.raffleAddress b
+      STSLICE               	//  storage.participantIndex inMessageBody.USlot2 storage.userAddress storage.conditions storage.isMatched storage.telegramID b
+      s1 s4 XCHG            	//  storage.participantIndex inMessageBody.USlot2 storage.telegramID storage.conditions storage.isMatched storage.userAddress b
+      STSLICE               	//  storage.participantIndex inMessageBody.USlot2 storage.telegramID storage.conditions storage.isMatched b
+      s2 PUSH               	//  storage.participantIndex inMessageBody.USlot2 storage.telegramID storage.conditions storage.isMatched b storage.conditions
+      SBITREFS              	//  storage.participantIndex inMessageBody.USlot2 storage.telegramID storage.conditions storage.isMatched b '92 '93
+      9 THROWIF             	//  storage.participantIndex inMessageBody.USlot2 storage.telegramID storage.conditions storage.isMatched b '92
+      8 PUSHPOW2            	//  storage.participantIndex inMessageBody.USlot2 storage.telegramID storage.conditions storage.isMatched b '92 '97=256
+      EQUAL                 	//  storage.participantIndex inMessageBody.USlot2 storage.telegramID storage.conditions storage.isMatched b '96
+      9 THROWIFNOT          	//  storage.participantIndex inMessageBody.USlot2 storage.telegramID storage.conditions storage.isMatched b
+      s1 s2 XCHG            	//  storage.participantIndex inMessageBody.USlot2 storage.telegramID storage.isMatched storage.conditions b
+      STSLICE               	//  storage.participantIndex inMessageBody.USlot2 storage.telegramID storage.isMatched b
+      1 STI                 	//  storage.participantIndex inMessageBody.USlot2 storage.telegramID b
+      OVER                  	//  storage.participantIndex inMessageBody.USlot2 storage.telegramID b storage.telegramID
+      ISNULL                	//  storage.participantIndex inMessageBody.USlot2 storage.telegramID b '100
+      IF:<{                 	//  storage.participantIndex inMessageBody.USlot2 storage.telegramID b
+        NIP                 	//  storage.participantIndex inMessageBody.USlot2 b
+        b{0} STSLICECONST   	//  storage.participantIndex inMessageBody.USlot2 b
+      }>ELSE<{              	//  storage.participantIndex inMessageBody.USlot2 storage.telegramID b
+        b{1} STSLICECONST   	//  storage.participantIndex inMessageBody.USlot2 storage.telegramID b
+        64 STU              	//  storage.participantIndex inMessageBody.USlot2 b
       }>
-      OVER                  	//  storage.participantIndex b storage.participantIndex
-      ISNULL                	//  storage.participantIndex b '70
-      IF:<{                 	//  storage.participantIndex b
-        NIP                 	//  b
-        b{0} STSLICECONST   	//  b
-      }>ELSE<{              	//  storage.participantIndex b
-        b{1} STSLICECONST   	//  storage.participantIndex b
-        64 STU              	//  b
+      s2 PUSH               	//  storage.participantIndex inMessageBody.USlot2 b storage.participantIndex
+      ISNULL                	//  storage.participantIndex inMessageBody.USlot2 b '106
+      IF:<{                 	//  storage.participantIndex inMessageBody.USlot2 b
+        1 2 BLKDROP2        	//  inMessageBody.USlot2 b
+        b{0} STSLICECONST   	//  inMessageBody.USlot2 b
+      }>ELSE<{              	//  storage.participantIndex inMessageBody.USlot2 b
+        b{1} STSLICECONST   	//  storage.participantIndex inMessageBody.USlot2 b
+        s1 s2 XCHG          	//  inMessageBody.USlot2 storage.participantIndex b
+        64 STU              	//  inMessageBody.USlot2 b
       }>
-      ENDC                  	//  '76
-      c4 POP                	// 
+      ENDC                  	//  inMessageBody.USlot2 '112
+      c4 POP                	//  inMessageBody.USlot2
+      // 28: value: RAFFLE_CANDIDATE_REGISTERATION_NOTIFICATION_OPERATION_FEE
+      1744000 PUSHINT       	//  inMessageBody.USlot2 '117
+      // 27: dest: inMessage.senderAddress
+      INMSG_SRC             	//  inMessageBody.USlot2 '117 '120
+      // 25: val raffleCandidateRegistrationNotification = createMessage(
+      NEWC                  	//  inMessageBody.USlot2 '117 '120 b
+      b{010000} STSLICECONST	//  inMessageBody.USlot2 '117 '120 b
+      STSLICE               	//  inMessageBody.USlot2 '117 b
+      SWAP                  	//  inMessageBody.USlot2 b '117
+      STGRAMS               	//  inMessageBody.USlot2 b
+      322371617 PUSHINT
+      139 STUR              	//  inMessageBody.USlot2 b
+      STSLICE               	//  b
+      ENDC                  	//  raffleCandidateRegistrationNotification
+      // 34: reserveToncoinsOnBalance(MIN_TONS_FOR_RAFFLE_CANDIDATE_STORAGE, RESERVE_MODE_EXACT_AMOUNT)
+      5000000 PUSHINT       	//  raffleCandidateRegistrationNotification '180=5000000
+      0 PUSHINT             	//  raffleCandidateRegistrationNotification '180=5000000 '181=0
+      RAWRESERVE            	//  raffleCandidateRegistrationNotification
+      // 35: raffleCandidateRegistrationNotification.send(SEND_MODE_CARRY_ALL_BALANCE | SEND_MODE_IGNORE_ERRORS)
+      130 PUSHINT           	//  raffleCandidateRegistrationNotification '184
+      SENDRAWMSG            	// 
     }>                      	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID storage.participantIndex lazyS
-    // 19: match (inMessageBody)
-    x{13370021} SDBEGINSQ   	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID storage.participantIndex lazyS '49
+    // 17: match (inMessageBody)
+    x{13370022} SDBEGINSQ   	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID storage.participantIndex lazyS '77
     IFJMP:<{                	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID storage.participantIndex lazyS
-      // 25: assert (storage.isMatched == false) throw ERROR_ALREADY_MATCHED
+      // 38: assert (storage.isMatched == false) throw ERROR_ALREADY_MATCHED
       s4 POP                	//  in.body storage.raffleAddress storage.userAddress lazyS storage.isMatched storage.telegramID storage.participantIndex
       s6 POP                	//  storage.participantIndex storage.raffleAddress storage.userAddress lazyS storage.isMatched storage.telegramID
-      24577 PUSHINT         	//  storage.participantIndex storage.raffleAddress storage.userAddress lazyS storage.isMatched storage.telegramID '79=24577
-      s0 s2 XCHG            	//  storage.participantIndex storage.raffleAddress storage.userAddress lazyS '79=24577 storage.telegramID storage.isMatched
-      NOT                   	//  storage.participantIndex storage.raffleAddress storage.userAddress lazyS '79=24577 storage.telegramID '80
-      s1 s2 XCHG            	//  storage.participantIndex storage.raffleAddress storage.userAddress lazyS storage.telegramID '79=24577 '80
+      24577 PUSHINT         	//  storage.participantIndex storage.raffleAddress storage.userAddress lazyS storage.isMatched storage.telegramID '187=24577
+      s0 s2 XCHG            	//  storage.participantIndex storage.raffleAddress storage.userAddress lazyS '187=24577 storage.telegramID storage.isMatched
+      NOT                   	//  storage.participantIndex storage.raffleAddress storage.userAddress lazyS '187=24577 storage.telegramID '188
+      s1 s2 XCHG            	//  storage.participantIndex storage.raffleAddress storage.userAddress lazyS storage.telegramID '187=24577 '188
       THROWANYIFNOT         	//  storage.participantIndex storage.raffleAddress storage.userAddress lazyS storage.telegramID
-      // 27: storage.conditions = inMessageBody.conditions
+      // 40: storage.conditions = inMessageBody.conditions
       SWAP                  	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID lazyS
       LDMSGADDR             	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 lazyS
       256 LDSLICE           	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 inMessageBody.USlot2 lazyS
       1 PLDI                	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 storage.conditions inMessageBody.USlot3
-      DUP                   	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 storage.conditions storage.isMatched inMessageBody.USlot3
-      // 30: if (inMessageBody.isMatched)
-      IF:<{                 	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 storage.conditions storage.isMatched
-        // 32: bounce: true
-        s2 POP              	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID storage.isMatched storage.conditions
-        // 31: val approveMessage = createMessage(
-        NEWC                	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID storage.isMatched storage.conditions b
-        b{011000} STSLICECONST	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID storage.isMatched storage.conditions b
-        s5 PUSH             	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID storage.isMatched storage.conditions b storage.raffleAddress
-        STSLICER            	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID storage.isMatched storage.conditions b
-        322371602 PUSHINT
-        143 STUR            	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID storage.isMatched storage.conditions b
-        s4 PUSH             	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID storage.isMatched storage.conditions b storage.userAddress
-        STSLICER            	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID storage.isMatched storage.conditions b
-        ENDC                	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID storage.isMatched storage.conditions approveMessage
-        // 40: approveMessage.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE)
-        64 PUSHINT          	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID storage.isMatched storage.conditions approveMessage '150=64
-        SENDRAWMSG          	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID storage.isMatched storage.conditions
-      }>ELSE<{              	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 storage.conditions storage.isMatched
-        // 46: body: createEmptyCell()
-        <b b> PUSHREF       	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 storage.conditions storage.isMatched '163
-        // 42: val excessMessage = createMessage(
-        NEWC                	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 storage.conditions storage.isMatched '163 b
-        b{011000} STSLICECONST	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 storage.conditions storage.isMatched '163 b
-        s1 s4 XCHG          	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID '163 storage.conditions storage.isMatched inMessageBody.USlot1 b
-        STSLICE             	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID '163 storage.conditions storage.isMatched b
+      s0 s5 PUSH2
+      // 49: contract.setData(self.toCell())
+      NEWC                  	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 storage.conditions inMessageBody.USlot3 storage.isMatched storage.raffleAddress b
+      STSLICE               	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 storage.conditions inMessageBody.USlot3 storage.isMatched b
+      s6 PUSH               	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 storage.conditions inMessageBody.USlot3 storage.isMatched b storage.userAddress
+      STSLICER              	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 storage.conditions inMessageBody.USlot3 storage.isMatched b
+      s3 PUSH               	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 storage.conditions inMessageBody.USlot3 storage.isMatched b storage.conditions
+      SBITREFS              	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 storage.conditions inMessageBody.USlot3 storage.isMatched b '197 '198
+      9 THROWIF             	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 storage.conditions inMessageBody.USlot3 storage.isMatched b '197
+      8 PUSHPOW2            	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 storage.conditions inMessageBody.USlot3 storage.isMatched b '197 '202=256
+      EQUAL                 	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 storage.conditions inMessageBody.USlot3 storage.isMatched b '201
+      9 THROWIFNOT          	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 storage.conditions inMessageBody.USlot3 storage.isMatched b
+      s1 s3 XCHG            	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 storage.isMatched inMessageBody.USlot3 storage.conditions b
+      STSLICE               	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 storage.isMatched inMessageBody.USlot3 b
+      s1 s2 XCHG            	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 inMessageBody.USlot3 storage.isMatched b
+      1 STI                 	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 inMessageBody.USlot3 b
+      s3 PUSH               	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 inMessageBody.USlot3 b storage.telegramID
+      ISNULL                	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 inMessageBody.USlot3 b '205
+      IF:<{                 	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 inMessageBody.USlot3 b
+        s3 POP              	//  storage.participantIndex storage.raffleAddress storage.userAddress b inMessageBody.USlot1 inMessageBody.USlot3
+        s0 s2 XCHG          	//  storage.participantIndex storage.raffleAddress storage.userAddress inMessageBody.USlot3 inMessageBody.USlot1 b
+        b{0} STSLICECONST   	//  storage.participantIndex storage.raffleAddress storage.userAddress inMessageBody.USlot3 inMessageBody.USlot1 b
+      }>ELSE<{              	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 inMessageBody.USlot3 b
+        b{1} STSLICECONST   	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID inMessageBody.USlot1 inMessageBody.USlot3 b
+        s1 s3 XCHG          	//  storage.participantIndex storage.raffleAddress storage.userAddress inMessageBody.USlot3 inMessageBody.USlot1 storage.telegramID b
+        64 STU              	//  storage.participantIndex storage.raffleAddress storage.userAddress inMessageBody.USlot3 inMessageBody.USlot1 b
+      }>
+      s5 PUSH               	//  storage.participantIndex storage.raffleAddress storage.userAddress inMessageBody.USlot3 inMessageBody.USlot1 b storage.participantIndex
+      ISNULL                	//  storage.participantIndex storage.raffleAddress storage.userAddress inMessageBody.USlot3 inMessageBody.USlot1 b '211
+      IF:<{                 	//  storage.participantIndex storage.raffleAddress storage.userAddress inMessageBody.USlot3 inMessageBody.USlot1 b
+        s5 POP              	//  b storage.raffleAddress storage.userAddress inMessageBody.USlot3 inMessageBody.USlot1
+        s0 s4 XCHG          	//  inMessageBody.USlot1 storage.raffleAddress storage.userAddress inMessageBody.USlot3 b
+        b{0} STSLICECONST   	//  inMessageBody.USlot1 storage.raffleAddress storage.userAddress inMessageBody.USlot3 b
+      }>ELSE<{              	//  storage.participantIndex storage.raffleAddress storage.userAddress inMessageBody.USlot3 inMessageBody.USlot1 b
+        b{1} STSLICECONST   	//  storage.participantIndex storage.raffleAddress storage.userAddress inMessageBody.USlot3 inMessageBody.USlot1 b
+        s1 s5 XCHG          	//  inMessageBody.USlot1 storage.raffleAddress storage.userAddress inMessageBody.USlot3 storage.participantIndex b
+        64 STU              	//  inMessageBody.USlot1 storage.raffleAddress storage.userAddress inMessageBody.USlot3 b
+      }>
+      ENDC                  	//  inMessageBody.USlot1 storage.raffleAddress storage.userAddress inMessageBody.USlot3 '217
+      c4 POP                	//  inMessageBody.USlot1 storage.raffleAddress storage.userAddress inMessageBody.USlot3
+      // 44: if (inMessageBody.isMatched)
+      IF:<{                 	//  inMessageBody.USlot1 storage.raffleAddress storage.userAddress
+        // 45: val approveMessage = createMessage(
+        NEWC                	//  inMessageBody.USlot1 storage.raffleAddress storage.userAddress refb
+        x{13370012} STSLICECONST	//  inMessageBody.USlot1 storage.raffleAddress storage.userAddress refb
+        s1 s3 XCHG          	//  storage.userAddress storage.raffleAddress inMessageBody.USlot1 refb
+        STSLICE             	//  storage.userAddress storage.raffleAddress refb
+        s1 s2 XCHG          	//  storage.raffleAddress storage.userAddress refb
+        STSLICE             	//  storage.raffleAddress refb
+        ENDC                	//  storage.raffleAddress '245
+        NEWC                	//  storage.raffleAddress '245 b
+        b{011000} STSLICECONST	//  storage.raffleAddress '245 b
+        s1 s2 XCHG          	//  '245 storage.raffleAddress b
+        STSLICE             	//  '245 b
         1 PUSHINT
-        111 STUR            	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID '163 storage.conditions storage.isMatched b
-        s1 s3 XCHG          	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID storage.isMatched storage.conditions '163 b
-        STREF               	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID storage.isMatched storage.conditions b
-        ENDC                	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID storage.isMatched storage.conditions excessMessage
-        // 49: excessMessage.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE)
-        64 PUSHINT          	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID storage.isMatched storage.conditions excessMessage '213=64
-        SENDRAWMSG          	//  storage.participantIndex storage.raffleAddress storage.userAddress storage.telegramID storage.isMatched storage.conditions
+        111 STUR            	//  '245 b
+        STREF               	//  b
+        ENDC                	//  approveMessage
+        // 55: reserveToncoinsOnBalance(MIN_TONS_FOR_RAFFLE_CANDIDATE_STORAGE, RESERVE_MODE_EXACT_AMOUNT)
+        5000000 PUSHINT     	//  approveMessage '283=5000000
+        0 PUSHINT           	//  approveMessage '283=5000000 '284=0
+        RAWRESERVE          	//  approveMessage
+        // 56: approveMessage.send(SEND_MODE_CARRY_ALL_BALANCE | SEND_MODE_BOUNCE_ON_ACTION_FAIL)
+        144 PUSHINT         	//  approveMessage '287
+        SENDRAWMSG          	// 
+      }>ELSE<{              	//  inMessageBody.USlot1 storage.raffleAddress storage.userAddress
+        2DROP               	//  inMessageBody.USlot1
+        // 62: body: createEmptyCell()
+        <b b> PUSHREF       	//  inMessageBody.USlot1 '300
+        // 58: val excessMessage = createMessage(
+        NEWC                	//  inMessageBody.USlot1 '300 b
+        b{010000} STSLICECONST	//  inMessageBody.USlot1 '300 b
+        s1 s2 XCHG          	//  '300 inMessageBody.USlot1 b
+        STSLICE             	//  '300 b
+        1 PUSHINT
+        111 STUR            	//  '300 b
+        STREF               	//  b
+        ENDC                	//  excessMessage
+        // 65: reserveToncoinsOnBalance(MIN_TONS_FOR_RAFFLE_CANDIDATE_STORAGE, RESERVE_MODE_EXACT_AMOUNT)
+        5000000 PUSHINT     	//  excessMessage '350=5000000
+        0 PUSHINT           	//  excessMessage '350=5000000 '351=0
+        RAWRESERVE          	//  excessMessage
+        // 66: excessMessage.send(SEND_MODE_CARRY_ALL_BALANCE | SEND_MODE_IGNORE_ERRORS)
+        130 PUSHINT         	//  excessMessage '354
+        SENDRAWMSG          	// 
       }>
-      // 41: contract.setData(self.toCell())
-      s0 s4 XCHG
-      NEWC                  	//  storage.participantIndex storage.conditions storage.userAddress storage.telegramID storage.isMatched storage.raffleAddress b
-      STSLICE               	//  storage.participantIndex storage.conditions storage.userAddress storage.telegramID storage.isMatched b
-      s1 s3 XCHG            	//  storage.participantIndex storage.conditions storage.isMatched storage.telegramID storage.userAddress b
-      STSLICE               	//  storage.participantIndex storage.conditions storage.isMatched storage.telegramID b
-      s3 PUSH               	//  storage.participantIndex storage.conditions storage.isMatched storage.telegramID b storage.conditions
-      SBITREFS              	//  storage.participantIndex storage.conditions storage.isMatched storage.telegramID b '216 '217
-      9 THROWIF             	//  storage.participantIndex storage.conditions storage.isMatched storage.telegramID b '216
-      8 PUSHPOW2            	//  storage.participantIndex storage.conditions storage.isMatched storage.telegramID b '216 '221=256
-      EQUAL                 	//  storage.participantIndex storage.conditions storage.isMatched storage.telegramID b '220
-      9 THROWIFNOT          	//  storage.participantIndex storage.conditions storage.isMatched storage.telegramID b
-      s1 s3 XCHG            	//  storage.participantIndex storage.telegramID storage.isMatched storage.conditions b
-      STSLICE               	//  storage.participantIndex storage.telegramID storage.isMatched b
-      1 STI                 	//  storage.participantIndex storage.telegramID b
-      OVER                  	//  storage.participantIndex storage.telegramID b storage.telegramID
-      ISNULL                	//  storage.participantIndex storage.telegramID b '224
-      IF:<{                 	//  storage.participantIndex storage.telegramID b
-        NIP                 	//  storage.participantIndex b
-        b{0} STSLICECONST   	//  storage.participantIndex b
-      }>ELSE<{              	//  storage.participantIndex storage.telegramID b
-        b{1} STSLICECONST   	//  storage.participantIndex storage.telegramID b
-        64 STU              	//  storage.participantIndex b
-      }>
-      OVER                  	//  storage.participantIndex b storage.participantIndex
-      ISNULL                	//  storage.participantIndex b '230
-      IF:<{                 	//  storage.participantIndex b
-        NIP                 	//  b
-        b{0} STSLICECONST   	//  b
-      }>ELSE<{              	//  storage.participantIndex b
-        b{1} STSLICECONST   	//  storage.participantIndex b
-        64 STU              	//  b
-      }>
-      ENDC                  	//  '236
-      c4 POP                	// 
     }>                      	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID storage.participantIndex lazyS
-    // 19: match (inMessageBody)
+    // 17: match (inMessageBody)
     NIP                     	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID lazyS
-    x{13370022} SDBEGINSQ   	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID lazyS '49
+    x{13370023} SDBEGINSQ   	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID lazyS '77
     IFJMP:<{                	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID lazyS
-      // 55: storage.participantIndex = inMessageBody.participantIndex
+      // 70: storage.participantIndex = inMessageBody.participantIndex
       s6 POP                	//  lazyS storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID
       s0 s5 XCHG            	//  storage.telegramID storage.raffleAddress storage.userAddress storage.conditions storage.isMatched lazyS
       64 PLDU               	//  storage.telegramID storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.participantIndex
-      // 41: contract.setData(self.toCell())
+      // 49: contract.setData(self.toCell())
       s0 s4 XCHG
       NEWC                  	//  storage.telegramID storage.participantIndex storage.userAddress storage.conditions storage.isMatched storage.raffleAddress b
       STSLICE               	//  storage.telegramID storage.participantIndex storage.userAddress storage.conditions storage.isMatched b
       s1 s3 XCHG            	//  storage.telegramID storage.participantIndex storage.isMatched storage.conditions storage.userAddress b
       STSLICE               	//  storage.telegramID storage.participantIndex storage.isMatched storage.conditions b
       OVER                  	//  storage.telegramID storage.participantIndex storage.isMatched storage.conditions b storage.conditions
-      SBITREFS              	//  storage.telegramID storage.participantIndex storage.isMatched storage.conditions b '243 '244
-      9 THROWIF             	//  storage.telegramID storage.participantIndex storage.isMatched storage.conditions b '243
-      8 PUSHPOW2            	//  storage.telegramID storage.participantIndex storage.isMatched storage.conditions b '243 '248=256
-      EQUAL                 	//  storage.telegramID storage.participantIndex storage.isMatched storage.conditions b '247
+      SBITREFS              	//  storage.telegramID storage.participantIndex storage.isMatched storage.conditions b '361 '362
+      9 THROWIF             	//  storage.telegramID storage.participantIndex storage.isMatched storage.conditions b '361
+      8 PUSHPOW2            	//  storage.telegramID storage.participantIndex storage.isMatched storage.conditions b '361 '366=256
+      EQUAL                 	//  storage.telegramID storage.participantIndex storage.isMatched storage.conditions b '365
       9 THROWIFNOT          	//  storage.telegramID storage.participantIndex storage.isMatched storage.conditions b
       STSLICE               	//  storage.telegramID storage.participantIndex storage.isMatched b
       1 STI                 	//  storage.telegramID storage.participantIndex b
       s2 PUSH               	//  storage.telegramID storage.participantIndex b storage.telegramID
-      ISNULL                	//  storage.telegramID storage.participantIndex b '251
+      ISNULL                	//  storage.telegramID storage.participantIndex b '369
       IF:<{                 	//  storage.telegramID storage.participantIndex b
         1 2 BLKDROP2        	//  storage.participantIndex b
         b{0} STSLICECONST   	//  storage.participantIndex b
@@ -372,7 +489,7 @@ PROGRAM{
         64 STU              	//  storage.participantIndex b
       }>
       OVER                  	//  storage.participantIndex b storage.participantIndex
-      ISNULL                	//  storage.participantIndex b '257
+      ISNULL                	//  storage.participantIndex b '375
       IF:<{                 	//  storage.participantIndex b
         NIP                 	//  b
         b{0} STSLICECONST   	//  b
@@ -380,56 +497,45 @@ PROGRAM{
         b{1} STSLICECONST   	//  storage.participantIndex b
         64 STU              	//  b
       }>
-      ENDC                  	//  '263
+      ENDC                  	//  '381
       c4 POP                	// 
     }>                      	//  in.body storage.raffleAddress storage.userAddress storage.conditions storage.isMatched storage.telegramID lazyS
     6 BLKDROP               	//  in.body
-    // 60: assert (inMessage.body.isEmpty()) throw 0xFFFF
-    16 PUSHPOW2DEC          	//  in.body '264=65535
-    SWAP                    	//  '264=65535 in.body
-    SEMPTY                  	//  '264=65535 '265
+    // 74: assert (inMessage.body.isEmpty()) throw ERROR_WRONG_OPCODE
+    16 PUSHPOW2DEC          	//  in.body '382=65535
+    SWAP                    	//  '382=65535 in.body
+    SEMPTY                  	//  '382=65535 '383
     THROWANYIFNOT           	// 
   }>
-  // contracts/raffle-candidate.tolk:65:5
-  conditions() PROC:<{        	// 
-    // 37: return RaffleCandidateStorage.fromCell(contract.getData())
+  // contracts/raffle-candidate.tolk:90:5
+  raffleCandidateData() PROC:<{	// 
+    // 45: return RaffleCandidateStorage.fromCell(contract.getData())
     c4 PUSH                 	//  '7
-    // 66: val storage = lazy RaffleCandidateStorage.load()
+    // 91: val storage = lazy RaffleCandidateStorage.load()
     CTOS                    	//  lazyS
-    // 67: return storage.conditions
+    // 92: return (storage.conditions, storage.telegramID, storage.participantIndex)
     LDMSGADDR               	//  '11 lazyS
     NIP                     	//  lazyS
     LDMSGADDR               	//  '12 lazyS
     NIP                     	//  lazyS
-    256 LDSLICE             	//  '14 lazyS
-    DROP                    	//  storage.conditions
-  }>
-  // contracts/raffle-candidate.tolk:70:5
-  participantIndex() PROC:<{  	// 
-    // 37: return RaffleCandidateStorage.fromCell(contract.getData())
-    c4 PUSH                 	//  '7
-    // 71: val storage = lazy RaffleCandidateStorage.load()
-    CTOS                    	//  lazyS
-    // 72: return storage.participantIndex
-    LDMSGADDR               	//  '11 lazyS
-    NIP                     	//  lazyS
-    LDMSGADDR               	//  '12 lazyS
-    NIP                     	//  lazyS
-    257 PUSHINT
-    SDSKIPFIRST             	//  lazyS
-    1 LDU                   	//  '15 lazyS
-    SWAP                    	//  lazyS '15
-    IF:<{                   	//  lazyS
-      64 LDU
-      NIP                   	//  lazyS
-    }>                      	//  lazyS
-    1 LDU                   	//  '19 lazyS
-    SWAP                    	//  lazyS '19
-    IF:<{                   	//  lazyS
-      64 PLDU               	//  '17
-    }>ELSE<{                	//  lazyS
-      DROP                  	// 
-      PUSHNULL              	//  '17
-    }>                      	//  storage.participantIndex
+    256 LDSLICE             	//  storage.conditions lazyS
+    1 LDU
+    NIP                     	//  storage.conditions lazyS
+    1 LDU                   	//  storage.conditions '18 lazyS
+    SWAP                    	//  storage.conditions lazyS '18
+    IF:<{                   	//  storage.conditions lazyS
+      64 LDU                	//  storage.conditions '16 lazyS
+    }>ELSE<{                	//  storage.conditions lazyS
+      PUSHNULL              	//  storage.conditions lazyS '16
+      SWAP                  	//  storage.conditions '16 lazyS
+    }>                      	//  storage.conditions storage.telegramID lazyS
+    1 LDU                   	//  storage.conditions storage.telegramID '24 lazyS
+    SWAP                    	//  storage.conditions storage.telegramID lazyS '24
+    IF:<{                   	//  storage.conditions storage.telegramID lazyS
+      64 PLDU               	//  storage.conditions storage.telegramID '22
+    }>ELSE<{                	//  storage.conditions storage.telegramID lazyS
+      DROP                  	//  storage.conditions storage.telegramID
+      PUSHNULL              	//  storage.conditions storage.telegramID '22
+    }>                      	//  storage.conditions storage.telegramID storage.participantIndex
   }>
 }END>c

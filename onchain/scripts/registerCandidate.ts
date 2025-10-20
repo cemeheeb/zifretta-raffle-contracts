@@ -17,7 +17,8 @@ export async function run(provider: NetworkProvider) {
   const raffle = provider.open(Raffle.createFromAddress(address));
   await raffle.sendRegisterCandidate(provider.sender(), {
     value: toNano("0.03"),
-    telegramID
+    telegramID,
+    recipientAddress: provider.sender().address!
   });
 
   ui.write('Waiting for candidate registration...');

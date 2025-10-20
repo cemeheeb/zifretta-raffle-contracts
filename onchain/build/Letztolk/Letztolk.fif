@@ -1,0 +1,22 @@
+"Asm.fif" include
+// automatically generated from letztolk.tolk
+PROGRAM{
+  0 DECLMETHOD onInternalMessage()
+  // contracts/letztolk.tolk:7
+  onInternalMessage() PROC:<{ 	//  in.body
+    // 7: fun onInternalMessage(inMessage: InMessage)
+    INMSG_BOUNCED           	//  in.body '1
+    0 THROWIF               	//  lazyS
+    // 10: match (inMessageBody)
+    x{13757014} SDBEGINSQ   	//  lazyS '10
+    IFJMP:<{                	//  lazyS
+      // 12: assert (inMessageBody.awesome == true) throw 0x2025
+      1 PLDI                	//  inMessageBody
+      8229 PUSHINT          	//  inMessageBody '15=8229
+      SWAP                  	//  '15=8229 inMessageBody
+      THROWANYIFNOT         	// 
+    }>                      	//  lazyS
+    // 10: match (inMessageBody)
+    63 THROW
+  }>
+}END>c

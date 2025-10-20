@@ -7,38 +7,54 @@ import "constants"
 import "errors"
 import "storage"
 import "messages"
+import "utils"
 
-type AllowedMessageRaffleParticipant = RaffleRegisterCandidate | RaffleSetConditions | RaffleApprove | RaffleNext | RafflePayout;
+type AllowedMessageRaffleParticipant = RaffleRegisterCandidate | RaffleCandidateRegistrationNotification | RaffleSetConditions | RaffleApprove | RaffleNext;
 
 fun onInternalMessage(inMessage: InMessage) {
     val inMessageBody = lazy AllowedMessageRaffleParticipant.fromSlice(inMessage.body);
+    var storage = lazy RaffleStorage.load();
 
     match (inMessageBody) {
         RaffleRegisterCandidate => {
-            assert (inMessage.valueCoins >= MIN_TONS_FOR_RAFFLE_CANDIDATE_STORAGE + RAFFLE_CANDIDATE_INITIALIZE_OPERATION_FEE) throw ERROR_INSUFFICIENT_FUNDS;
-
-            val storage = lazy RaffleStorage.load();
-
-            assert (blockchain.now() < storage.deadline) throw ERROR_EXPIRED;
+            assert (inMessage.valueCoins >= MIN_TONS_FOR_RAFFLE_CANDIDATE_STORAGE + RAFFLE_CANDIDATE_INITIALIZE_OPERATION_FEE) throw ERROR_NOT_ENOUGH_TONS;
 
             val deployRaffleCandidateMessage = createMessage({
                 bounce: false,
                 dest: calculateRaffleCandidateAddress(contract.getAddress(), inMessage.senderAddress, storage.candidateCode),
                 value: 0,
                 body: RaffleCandidateInitialize {
+                    recipientAddress: inMessage.senderAddress,
                     telegramID: inMessageBody.telegramID,
-                    recipientAddress: inMessage.senderAddress
                 }
             });
 
             reserveToncoinsOnBalance(MIN_TONS_FOR_RAFFLE_STORAGE, RESERVE_MODE_EXACT_AMOUNT);
             deployRaffleCandidateMessage.send(SEND_MODE_CARRY_ALL_BALANCE);
         }
-        RaffleSetConditions => {
-            assert (inMessage.valueCoins >= MIN_TONS_FOR_RAFFLE_CANDIDATE_STORAGE + RAFFLE_SET_CONDITIONS_OPERATION_FEE) throw ERROR_INSUFFICIENT_FUNDS;
+        RaffleCandidateRegistrationNotification => {
+            assert (inMessage.valueCoins >= RAFFLE_CANDIDATE_REGISTERATION_NOTIFICATION_OPERATION_FEE) throw ERROR_NOT_ENOUGH_TONS;
 
-            val storage = lazy RaffleStorage.load();
+            storage.candidatesQuantity += 1;
+            storage.save();
+
+            val excessMessage = createMessage({
+                bounce: false,
+                dest: inMessageBody.recipientAddress,
+                value: 0,
+                body: createEmptyCell(),
+            });
+
+            reserveToncoinsOnBalance(MIN_TONS_FOR_RAFFLE_STORAGE, RESERVE_MODE_EXACT_AMOUNT);
+            excessMessage.send(SEND_MODE_CARRY_ALL_BALANCE);
+        }
+        RaffleSetConditions => {
+            assert (inMessage.valueCoins >= MIN_TONS_FOR_RAFFLE_CANDIDATE_STORAGE + RAFFLE_SET_CONDITIONS_OPERATION_FEE) throw ERROR_NOT_ENOUGH_TONS;
             assert (inMessage.senderAddress == storage.ownerAddress) throw ERROR_NOT_AUTHORIZED;
+
+            if (storage.minParticipantReachedUnixTime > 0) {
+                assert (blockchain.now() < storage.minParticipantReachedUnixTime + SEVEN_DAYS) throw ERROR_EXPIRED;
+            }
 
             val candidate = calculateRaffleCandidateAddress(contract.getAddress(), inMessageBody.userAddress, storage.candidateCode);
             val candidateAddress = address.fromValidBuilder(candidate.buildAddress());
@@ -59,13 +75,12 @@ fun onInternalMessage(inMessage: InMessage) {
         }
         RaffleApprove => {
             assert (
-                inMessage.valueCoins >= (
-                    RAFFLE_CANDIDATE_SET_PARTICIPANT_INDEX_OPERATION_FEE +
-                    MIN_TONS_FOR_RAFFLE_PARTICIPANT_STORAGE +
-                    RAFFLE_PARTICIPANT_SET_USER_ADDRESS_OPERATION_FEE
-                )
-            ) throw ERROR_INSUFFICIENT_FUNDS;
-            var storage = lazy RaffleStorage.load();
+            inMessage.valueCoins >= (
+                RAFFLE_CANDIDATE_SET_PARTICIPANT_INDEX_OPERATION_FEE +
+                MIN_TONS_FOR_RAFFLE_PARTICIPANT_STORAGE +
+                RAFFLE_PARTICIPANT_SET_USER_ADDRESS_OPERATION_FEE
+            )
+            ) throw ERROR_NOT_ENOUGH_TONS;
 
             val raffleCandidate = calculateRaffleCandidateAddress(contract.getAddress(), inMessageBody.userAddress, storage.candidateCode);
             val raffleCandidateAddress = address.fromValidBuilder(raffleCandidate.buildAddress());
@@ -76,16 +91,17 @@ fun onInternalMessage(inMessage: InMessage) {
                 dest: raffleCandidateAddress,
                 value: RAFFLE_CANDIDATE_SET_PARTICIPANT_INDEX_OPERATION_FEE,
                 body: RaffleCandidateSetParticipantIndex {
-                    participantIndex: storage.participantQuantity
+                    participantIndex: storage.participantsQuantity
                 },
             });
             setParticipantIndexMessage.send(SEND_MODE_PAY_FEES_SEPARATELY);
 
             val deployParticipantMessage = createMessage({
                 bounce: false,
-                dest: calculateRaffleParticipantAddress(contract.getAddress(), storage.participantQuantity, storage.participantCode),
+                dest: calculateRaffleParticipantAddress(contract.getAddress(), storage.participantsQuantity, storage.participantCode),
                 value: MIN_TONS_FOR_RAFFLE_PARTICIPANT_STORAGE + RAFFLE_PARTICIPANT_SET_USER_ADDRESS_OPERATION_FEE,
-                body: RaffleParticipantSetUserAddress {
+                body: RaffleParticipantInitialize {
+                    recipientAddress: inMessageBody.recipientAddress,
                     userAddress: inMessageBody.userAddress,
                 },
             });
@@ -93,69 +109,83 @@ fun onInternalMessage(inMessage: InMessage) {
 
             val excessMessage = createMessage({
                 bounce: false,
-                dest: storage.ownerAddress,
+                dest: inMessageBody.recipientAddress,
                 value: 0,
                 body: createEmptyCell(),
             });
 
-            storage.participantQuantity += 1;
+            storage.participantsQuantity += 1;
+            if (storage.participantsQuantity >= storage.minParticipantQuantity && storage.minParticipantReachedLt == 0) {
+                storage.minParticipantReachedLt = blockchain.logicalTime();
+                storage.minParticipantReachedUnixTime = blockchain.now();
+            }
             storage.save();
 
             reserveToncoinsOnBalance(MIN_TONS_FOR_RAFFLE_STORAGE, RESERVE_MODE_EXACT_AMOUNT);
             excessMessage.send(SEND_MODE_CARRY_ALL_BALANCE);
         }
         RaffleNext => {
-            assert (inMessage.valueCoins >= MIN_TONS_FOR_RAFFLE_PARTICIPANT_STORAGE + RAFFLE_NEXT_OPERATION_FEE) throw ERROR_INSUFFICIENT_FUNDS;
-            var storage = lazy RaffleStorage.load();
-
-            assert (storage.participantQuantity > storage.maxRewards + 1) throw ERROR_NOT_ENOUGH_USERS;
-            assert (storage.nextRewardIndex + 1 < storage.maxRewards) throw ERROR_REWARD_LIMIT_REACHED;
+            assert (inMessage.valueCoins >= MIN_TONS_FOR_RAFFLE_PARTICIPANT_STORAGE + RAFFLE_NEXT_OPERATION_FEE) throw ERROR_NOT_ENOUGH_TONS;
+            assert (blockchain.logicalTime() > storage.minParticipantReachedLt) throw ERROR_NOT_READY;
+            assert (storage.participantsQuantity > storage.winnersQuantity + 1) throw ERROR_NOT_ENOUGH_USERS;
 
             random.initialize();
 
-            var rewardIndex: uint64 = 0;
-            var offset = 0;
-            do {
-                rewardIndex = random.range(storage.participantQuantity);
+            var winnerParticipantIndex: uint64;
+            var index = 0;
 
-                var success: bool = false;
-                if (!storage.winners.dictIsEmpty()) {
-                    // random first
-                    (_, success) = storage.winners.uDictGetRef(64, rewardIndex);
+            var success: bool = false;
+            winnerParticipantIndex = random.range(storage.participantsQuantity);
 
-                    // if already winner, wide search nearest participants before-first, after-last
-                    while (success) {
-                        offset += 1;
-                        if (rewardIndex - offset >= 0) {
-                            (_, success) = storage.winners.uDictGetRef(64, rewardIndex - offset);
-                        }
-                        if (success && rewardIndex + offset < storage.participantQuantity) {
-                            (_, success) = storage.winners.uDictGetRef(64, rewardIndex - offset);
-                        }
+            // random first
+            (_, success) = storage.winners.uDictGetRef(64, winnerParticipantIndex);
+
+            // if already winner, wide search nearest participants before-first, after-last
+            while (success) {
+                index += 1;
+
+                val isInBoundaryStart = winnerParticipantIndex - index >= 0;
+                if (isInBoundaryStart) {
+                    (_, success) = storage.winners.uDictGetRef(64, winnerParticipantIndex - index);
+                    if (!success) {
+                        winnerParticipantIndex -= index;
                     }
                 }
-            } while (success);
 
-            storage.winners.uDictSetRef(64, rewardIndex, createEmptyCell());
-            storage.nextRewardIndex += 1;
-            storage.save();
+                val isInBoundaryEnd = winnerParticipantIndex + index < storage.participantsQuantity;
+                if (success && isInBoundaryEnd) {
+                    (_, success) = storage.winners.uDictGet(64, winnerParticipantIndex + index);
+                    if (!success) {
+                        winnerParticipantIndex += index;
+                    }
+                }
 
-            val raffleParticipantAddress = calculateRaffleParticipantAddress(contract.getAddress(), rewardIndex, storage.participantCode);
-            val participantRewardMessage = createMessage({
+                assert (!success || isInBoundaryStart || isInBoundaryEnd) throw ERROR_INTERNAL;
+            }
+
+            val raffleParticipantAddress = calculateRaffleParticipantAddress(
+                contract.getAddress(), winnerParticipantIndex, storage.participantCode);
+
+            val winnerMessage = createMessage({
                 bounce: false,
                 dest: address.fromValidBuilder(raffleParticipantAddress.buildAddress()),
                 value: 0,
-                body: RaffleParticipantRewardNotification {
-                    message: inMessageBody.message
+                body: RaffleParticipantWinnerNotification {
+                    winnerIndex: storage.winnersQuantity,
+                    forwardAmount: inMessageBody.forwardAmount,
+                    forwardPayload: inMessageBody.forwardPayload
                 },
             });
 
+            storage.winners.uDictSetRef(64, winnerParticipantIndex, createEmptyCell());
+            storage.winnersQuantity = storage.winnersQuantity + 1;
+            storage.save();
+
             reserveToncoinsOnBalance(MIN_TONS_FOR_RAFFLE_STORAGE, RESERVE_MODE_EXACT_AMOUNT);
-            participantRewardMessage.send(SEND_MODE_CARRY_ALL_BALANCE | SEND_MODE_IGNORE_ERRORS);
+            winnerMessage.send(SEND_MODE_CARRY_ALL_BALANCE | SEND_MODE_IGNORE_ERRORS);
         }
-        RafflePayout => {
-            val storage = lazy RaffleStorage.load();
-            assert (inMessage.senderAddress == storage.ownerAddress) throw ERROR_NOT_AUTHORIZED;
+        else => {
+            assert (inMessage.body.isEmpty()) throw 0xFFFF;
 
             val excessMessage = createMessage({
                 bounce: false,
@@ -167,15 +197,22 @@ fun onInternalMessage(inMessage: InMessage) {
             reserveToncoinsOnBalance(MIN_TONS_FOR_RAFFLE_STORAGE, RESERVE_MODE_EXACT_AMOUNT);
             excessMessage.send(SEND_MODE_CARRY_ALL_BALANCE);
         }
-        else => {
-            assert (inMessage.body.isEmpty()) throw 0xFFFF
-        }
     }
 }
 
-get fun staticData(): (int, int, bits256, int, int, dict) {
+get fun raffleData(): (int, int, bits256, int, int, int, int, int, dict?) {
     val storage = lazy RaffleStorage.load();
-    return (storage.deadline, storage.maxRewards, storage.conditions, storage.participantQuantity, storage.nextRewardIndex, storage.winners);
+    return (
+        storage.minParticipantQuantity,
+        storage.duration,
+        storage.conditions,
+        storage.minParticipantReachedLt,
+        storage.minParticipantReachedUnixTime,
+        storage.candidatesQuantity,
+        storage.participantsQuantity,
+        storage.winnersQuantity,
+        storage.winners
+    );
 }
 
 get fun raffleCandidateAddress(userAddress: address): address {

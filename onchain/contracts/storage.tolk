@@ -4,15 +4,18 @@ import "utils"
 struct RaffleStorage {
     // state init:
     ownerAddress: address;
-    deadline: uint64;
-    maxRewards: uint32;
+    minParticipantQuantity: uint32; // candidate quantity needs to start raffle coundown
     conditions: bits256;
+    duration: uint32;
     candidateCode: cell;
     participantCode: cell;
     // after initialization state
-    participantQuantity: uint64; // default: 0
-    nextRewardIndex: uint32; // default: 0
-    winners: cell?
+    minParticipantReachedLt: uint64; // default: 0
+    minParticipantReachedUnixTime: int64; // default: 0
+    candidatesQuantity: uint64; // default: 0
+    participantsQuantity: uint64; // default: 0
+    winnersQuantity: uint8; // default: 0
+    winners: dict;
 }
 
 fun RaffleStorage.load() {
@@ -48,6 +51,7 @@ struct RaffleParticipantStorage {
     participantIndex: uint64;
     // after initialization state
     userAddress: address?;
+    winnerIndex: uint8?;
 }
 
 fun RaffleParticipantStorage.load() {
@@ -71,7 +75,7 @@ fun calculateRaffleCandidateAddress(raffleAddress: address, userAddress: address
 }
 
 fun calculateRaffleParticipantAddress(raffleAddress: address, participantIndex: uint64, code: cell): AutoDeployAddress {
-    val data: RaffleParticipantStorage = { raffleAddress, participantIndex, userAddress: null };
+    val data: RaffleParticipantStorage = { raffleAddress, participantIndex, userAddress: null, winnerIndex: null };
 
     return {
         workchain: MY_WORKCHAIN,

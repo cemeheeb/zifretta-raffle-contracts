@@ -16,20 +16,23 @@ fun onInternalMessage(inMessage: InMessage) {
 
     match (inMessageBody) {
         RaffleCandidateInitialize => {
-            assert (inMessageBody.telegramID > 0) throw ERROR_INVALID_TELEGRAM_ID
-            assert (storage.telegramID == 0) throw ERROR_ALREADY_REGISTERED
+            assert (inMessageBody.telegramID > 0) throw ERROR_INVALID_TELEGRAM_ID;
+            assert (storage.telegramID == null) throw ERROR_ALREADY_REGISTERED;
+
             storage.telegramID = inMessageBody.telegramID;
             storage.save();
 
-            val excessMessage = createMessage({
+            val raffleCandidateRegistrationNotification = createMessage({
                 bounce: false,
-                dest: inMessageBody.recipientAddress,
-                value: 0,
-                body: createEmptyCell(),
+                dest: inMessage.senderAddress,
+                value: RAFFLE_CANDIDATE_REGISTERATION_NOTIFICATION_OPERATION_FEE,
+                body: RaffleCandidateRegistrationNotification {
+                    recipientAddress: inMessageBody.recipientAddress
+                },
             });
 
             reserveToncoinsOnBalance(MIN_TONS_FOR_RAFFLE_CANDIDATE_STORAGE, RESERVE_MODE_EXACT_AMOUNT);
-            excessMessage.send(SEND_MODE_CARRY_ALL_BALANCE | SEND_MODE_IGNORE_ERRORS);
+            raffleCandidateRegistrationNotification.send(SEND_MODE_CARRY_ALL_BALANCE | SEND_MODE_IGNORE_ERRORS);
         }
         RaffleCandidateSetConditions => {
             assert (storage.isMatched == false) throw ERROR_ALREADY_MATCHED;
@@ -44,12 +47,13 @@ fun onInternalMessage(inMessage: InMessage) {
                     dest: storage.raffleAddress,
                     value: 0,
                     body: RaffleApprove {
+                        recipientAddress: inMessageBody.recipientAddress,
                         userAddress: storage.userAddress,
                     },
                 });
 
                 reserveToncoinsOnBalance(MIN_TONS_FOR_RAFFLE_CANDIDATE_STORAGE, RESERVE_MODE_EXACT_AMOUNT);
-                approveMessage.send(SEND_MODE_CARRY_ALL_BALANCE);
+                approveMessage.send(SEND_MODE_CARRY_ALL_BALANCE | SEND_MODE_BOUNCE_ON_ACTION_FAIL);
             } else {
                 val excessMessage = createMessage({
                     bounce: false,
@@ -83,12 +87,7 @@ fun onBouncedMessage(in: InMessageBounced) {
     storage.save();
 }
 
-get fun conditions(): bits256 {
+get fun raffleCandidateData(): (bits256, int?, int?) {
     val storage = lazy RaffleCandidateStorage.load();
-    return storage.conditions;
-}
-
-get fun participantIndex(): int? {
-    val storage = lazy RaffleCandidateStorage.load();
-    return storage.participantIndex;
+    return (storage.conditions, storage.telegramID, storage.participantIndex);
 }

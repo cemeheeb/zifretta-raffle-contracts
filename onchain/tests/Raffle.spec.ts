@@ -3,11 +3,12 @@ import {beginCell, Cell, toNano} from '@ton/core';
 import '@ton/test-utils';
 import {compile} from '@ton/blueprint';
 
-import {OperationCodes, Raffle} from '../wrappers/Raffle';
+import {Raffle} from '../wrappers/Raffle';
 import {RaffleCandidate} from "../wrappers/RaffleCandidate";
 import {RaffleParticipant} from "../wrappers/RaffleParticipant";
+import {OperationCodes} from "../wrappers/constants";
 
-const USER_QUANTITY = 5;
+const USER_QUANTITY = 10;
 
 describe('Raffle', () => {
   let code: Cell;
@@ -34,9 +35,8 @@ describe('Raffle', () => {
         await Raffle.createFromConfig(
             {
               ownerAddress: deployer.address,
-              commencement: BigInt(jest.now()),
-              deadline: BigInt(jest.now() + 1000000),
-              maxRewards: 3n,
+              minParticipantsQuantity: BigInt(5),
+              duration: 604800n,
               conditions: {
                 blackTicketPurchased: BigInt(2),
                 whiteTicketMinted: BigInt(2)
@@ -62,25 +62,26 @@ describe('Raffle', () => {
   });
 
   it('participant quantity must be zero', async () => {
-    const staticData = await raffle.getStaticData();
+    const staticData = await raffle.getData();
     expect(staticData.participantsQuantity).toBe(0n);
   });
 
   it('should deploy RaffleCandidate contracts after sendRegisterCandidate', async () => {
 
+    let index = 0;
     for (const user of users) {
 
       const registerCandidateResult = await raffle.sendRegisterCandidate(user.getSender(), {
         value: toNano("0.2"),
-        telegramID: 123n
+        recipientAddress: user.address,
+        telegramID: 123n + BigInt(index++)
       });
       const raffleCandidateAddress = await raffle.getRaffleCandidateAddress(user.address);
       const raffleCandidate: SandboxContract<RaffleCandidate> = blockchain.openContract(
           RaffleCandidate.createFromAddress(raffleCandidateAddress)
       );
 
-      const participantIndex = await raffleCandidate.getParticipantIndex();
-
+      const {participantIndex} = await raffleCandidate.getData();
       expect(participantIndex).toBeNull();
 
       expect(registerCandidateResult.transactions).toHaveTransaction({
@@ -98,7 +99,8 @@ describe('Raffle', () => {
     for (const user of users) {
       const registerCandidateResult = await raffle.sendRegisterCandidate(user.getSender(), {
         value: toNano("0.2"),
-        telegramID: 123n
+        recipientAddress: user.address,
+        telegramID: 123n + BigInt(userIndex++)
       });
       const raffleCandidateAddress = await raffle.getRaffleCandidateAddress(user.address);
       const raffleCandidate: SandboxContract<RaffleCandidate> = blockchain.openContract(
@@ -111,14 +113,22 @@ describe('Raffle', () => {
         deploy: true,
         success: true,
       });
+    }
 
-      // Отправка части
+    userIndex = 0;
+    for(const user of users) {
+
+      const raffleCandidateAddress = await raffle.getRaffleCandidateAddress(user.address);
+      const raffleCandidate: SandboxContract<RaffleCandidate> = blockchain.openContract(
+          RaffleCandidate.createFromAddress(raffleCandidateAddress)
+      );
+
       const setConditionsAResult = await raffle.sendConditions(deployer.getSender(), {
         value: toNano("0.2"),
         userAddress: user.address,
         conditions: {
           blackTicketPurchased: 1n,
-          whiteTicketMinted: 1n
+          whiteTicketMinted: 2n
         }
       });
 
@@ -166,11 +176,10 @@ describe('Raffle', () => {
       });
 
       // Должен увеличится счетчик аппрувнутых участников
-      const staticData = await raffle.getStaticData();
+      const staticData = await raffle.getData();
       expect(staticData.participantsQuantity).toBe(BigInt(++userIndex));
 
-      const participantIndex = await raffleCandidate.getParticipantIndex();
-
+      const {participantIndex} = await raffleCandidate.getData();
       if (participantIndex != null) {
         const raffleParticipantAddress = await raffle.getRaffleParticipantAddress(participantIndex!);
         let raffleParticipant: SandboxContract<RaffleParticipant> = blockchain.openContract(
@@ -189,11 +198,12 @@ describe('Raffle', () => {
       expect(participantIndex).toBeDefined();
     }
 
-    const staticData = await raffle.getStaticData();
-    expect(staticData.participantsQuantity).toBe(5n);
+    const staticData = await raffle.getData();
+    expect(staticData.participantsQuantity).toBe(BigInt(USER_QUANTITY));
 
     const setRaffleNextAResult = await raffle.sendRaffleNext(deployer.getSender(), {
-      value: toNano("0.2"),
+      value: toNano("2.05"),
+      forwardAmount: toNano("2"),
       message: "Congratulations! You are the winner!"
     });
 

@@ -10,6 +10,7 @@ import {
     Slice
 } from '@ton/core';
 import {compile} from "@ton/blueprint";
+import {OperationCodes} from "./constants";
 
 type RaffleConditions = {
   blackTicketPurchased: bigint;
@@ -18,18 +19,21 @@ type RaffleConditions = {
 
 export type RaffleConfiguration = {
     ownerAddress: Address;
-    deadline: bigint;
-    maxRewards: bigint;
+    minParticipantsQuantity: bigint;
     conditions: RaffleConditions;
+    duration: bigint;
 };
 
-export type RaffleStaticData = {
-    deadline: bigint;
-    maxRewards: bigint;
+export type RaffleData = {
+    minParticipantsQuantity: bigint;
     conditions: RaffleConditions;
+    duration: bigint;
+    minCandidateReachedLt: bigint;
+    minCandidateReachedUnixTime: bigint;
+    candidatesQuantity: bigint;
     participantsQuantity: bigint;
-    nextRewardIndex: bigint;
-    winners: bigint[];
+    winnersQuantity: bigint;
+    winners: number[];
 }
 
 function raffleConditionConfigurationToBits256(configuration: RaffleConditions) {
@@ -49,30 +53,19 @@ export async function raffleConfigurationToCell(configuration: RaffleConfigurati
 
   return beginCell()
       .storeAddress(configuration.ownerAddress)
-      .storeUint(configuration.deadline, 64)
-      .storeUint(configuration.maxRewards, 32)
+      .storeUint(configuration.minParticipantsQuantity, 32)
       .storeBits(raffleConditionConfigurationToBits256(configuration.conditions))
+      .storeUint(configuration.duration, 32)
       .storeRef(raffleCandidateCode)
       .storeRef(raffleParticipantCode)
       .storeUint(0, 64)
-      .storeUint(0, 32)
-      .storeMaybeRef(null)
+      .storeInt(0, 64)
+      .storeUint(0, 64)
+      .storeUint(0, 64)
+      .storeUint(0, 8)
       .storeMaybeRef(null)
       .endCell();
 }
-
-export const OperationCodes = {
-    OP_RAFFLE_REGISTER_CANDIDATE: 0x13370010,
-    OP_RAFFLE_SET_CONDITIONS: 0x13370011,
-    OP_RAFFLE_APPROVE: 0x13370012,
-    OP_RAFFLE_NEXT: 0x13370013,
-    OP_RAFFLE_PAYOUT: 0x13370014,
-    OP_RAFFLE_CANDIDATE_INITIALIZE: 0x13370020,
-    OP_RAFFLE_CANDIDATE_SET_CONDITIONS: 0x13370021,
-    OP_RAFFLE_CANDIDATE_SET_PARTICIPANT_INDEX: 0x13370022,
-    OP_RAFFLE_PARTICIPANT_SET_USER_ADDRESS: 0x13370030,
-    OP_RAFFLE_PARTICIPANT_REWARD_NOTIFICATION: 0x13370031,
-};
 
 export class Raffle implements Contract {
     constructor(readonly address: Address, readonly init?: { code: Cell; data: Cell }) {}
@@ -92,9 +85,7 @@ export class Raffle implements Contract {
         await provider.internal(via, {
             value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: beginCell()
-                .storeUint(OperationCodes.OP_RAFFLE_PAYOUT, 32)
-                .endCell(),
+            body: beginCell().endCell(),
         });
     }
 
@@ -103,6 +94,7 @@ export class Raffle implements Contract {
         via: Sender,
         options: {
             value: bigint;
+            recipientAddress: Address;
             telegramID: bigint;
         }
     ) {
@@ -141,7 +133,8 @@ export class Raffle implements Contract {
         via: Sender,
         options: {
             value: bigint;
-            message: string | null;
+            forwardAmount: bigint;
+            message: string;
         }
     ) {
 
@@ -150,31 +143,39 @@ export class Raffle implements Contract {
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell()
                 .storeUint(OperationCodes.OP_RAFFLE_NEXT, 32)
-                .storeMaybeStringRefTail(options.message)
+                .storeCoins(options.forwardAmount)
+                .storeStringTail(options.message)
                 .endCell(),
         });
     }
 
-    async getStaticData(provider: ContractProvider): Promise<RaffleStaticData> {
-        const result = await provider.get('staticData', []);
+    async getData(provider: ContractProvider): Promise<RaffleData> {
+        const result = await provider.get('raffleData', []);
+        const minCandidateQuantity = BigInt(result.stack.readNumber());
+        const participantDuration = BigInt(result.stack.readNumber());
 
-        const deadline = BigInt(result.stack.readNumber());
-        const maxRewards = BigInt(result.stack.readNumber());
         const conditionBuffer = result.stack.readBuffer();
         const conditionSlice = new Slice(new BitReader(new BitString(conditionBuffer, 0, conditionBuffer.length)), []);
         const conditions = {
             blackTicketPurchased: BigInt(conditionSlice.loadUint(8)),
             whiteTicketMinted: BigInt(conditionSlice.loadUint(8)),
         }
+
+        const minCandidateReachedLt = BigInt(result.stack.readNumber());
+        const minCandidateReachedUnixTime = BigInt(result.stack.readNumber());
+        const candidatesQuantity = BigInt(result.stack.readNumber());
         const participantsQuantity = BigInt(result.stack.readNumber());
-        const nextRewardIndex = BigInt(result.stack.readNumber());
+        const winnersQuantity = BigInt(result.stack.readNumber());
 
         return {
-            deadline,
-            maxRewards,
+            minParticipantsQuantity: minCandidateQuantity,
+            duration: participantDuration,
             conditions,
+            minCandidateReachedLt,
+            minCandidateReachedUnixTime,
+            candidatesQuantity,
             participantsQuantity,
-            nextRewardIndex,
+            winnersQuantity,
             winners: []
         };
     }

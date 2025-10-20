@@ -5,7 +5,7 @@ import "messages"
 import "constants"
 import "errors"
 
-type AllowedMessageParticipant = RaffleParticipantSetUserAddress | RaffleParticipantRewardNotification;
+type AllowedMessageParticipant = RaffleParticipantInitialize | RaffleParticipantWinnerNotification;
 
 fun onInternalMessage(inMessage: InMessage) {
 
@@ -15,21 +15,37 @@ fun onInternalMessage(inMessage: InMessage) {
     val inMessageBody = lazy AllowedMessageParticipant.fromSlice(inMessage.body);
 
     match (inMessageBody) {
-        RaffleParticipantSetUserAddress => {
+        RaffleParticipantInitialize => {
             storage.userAddress = inMessageBody.userAddress;
             storage.save();
         }
 
-        RaffleParticipantRewardNotification => {
+        RaffleParticipantWinnerNotification => {
+            assert (inMessage.valueCoins > MIN_TONS_FOR_RAFFLE_PARTICIPANT_STORAGE + inMessageBody.forwardAmount) throw ERROR_NOT_ENOUGH_TONS;
             assert (storage.userAddress != null) throw ERROR_INVALID_PARTICIPANT;
-            val excessMessage = createMessage({
+
+            storage.winnerIndex = inMessageBody.winnerIndex;
+            storage.save();
+
+            val userNotificationMessage = createMessage({
                 bounce: true,
                 dest: storage.userAddress,
-                value: 0,
-                body: inMessageBody.message,
+                value: inMessageBody.forwardAmount,
+                body: inMessageBody.forwardPayload,
             });
 
-            excessMessage.send(SEND_MODE_CARRY_ALL_BALANCE);
+            reserveToncoinsOnBalance(MIN_TONS_FOR_RAFFLE_PARTICIPANT_STORAGE, RESERVE_MODE_EXACT_AMOUNT);
+            userNotificationMessage.send(SEND_MODE_PAY_FEES_SEPARATELY);
+
+            val excessMessage = createMessage({
+                bounce: true,
+                dest: storage.raffleAddress,
+                value: 0,
+                body: createEmptyCell(),
+            });
+
+            reserveToncoinsOnBalance(MIN_TONS_FOR_RAFFLE_PARTICIPANT_STORAGE, RESERVE_MODE_EXACT_AMOUNT);
+            excessMessage.send(SEND_MODE_CARRY_ALL_BALANCE | SEND_MODE_IGNORE_ERRORS);
         }
 
         else => {
@@ -38,7 +54,7 @@ fun onInternalMessage(inMessage: InMessage) {
     }
 }
 
-get fun userAddress(): address? {
+get fun raffleParticipantData(): (int, address?, int?) {
     val storage = lazy RaffleParticipantStorage.load();
-    return storage.userAddress;
+    return (storage.participantIndex, storage.userAddress, storage.winnerIndex);
 }

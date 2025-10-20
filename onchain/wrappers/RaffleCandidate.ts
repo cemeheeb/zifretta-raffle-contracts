@@ -4,7 +4,13 @@ import {
     Contract,
     ContractProvider
 } from '@ton/core';
+import {Conditions} from "./types";
 
+export type RaffleCandidateData = {
+    conditions: Conditions;
+    telegramID: number | null;
+    participantIndex: number | null;
+}
 
 export class RaffleCandidate implements Contract {
     constructor(readonly address: Address, readonly init?: { code: Cell; data: Cell }) {}
@@ -14,13 +20,17 @@ export class RaffleCandidate implements Contract {
         return new RaffleCandidate(address);
     }
 
-    async getConditions(provider: ContractProvider) {
-        const result = await provider.get('conditions', []);
-        return result.stack.readBuffer();
-    }
+    async getData(provider: ContractProvider): Promise<RaffleCandidateData> {
+        const result = await provider.get('raffleCandidateData', []);
 
-    async getParticipantIndex(provider: ContractProvider) {
-        const result = await provider.get('participantIndex', []);
-        return result.stack.readNumberOpt();
+        const conditionsSlice = result.stack.readCell().beginParse();
+        return {
+            conditions: {
+                whiteTicketMinted: conditionsSlice.loadUint(8),
+                blackTicketPurchased: conditionsSlice.loadUint(8),
+            },
+            telegramID: result.stack.readNumberOpt(),
+            participantIndex: result.stack.readNumberOpt(),
+        };
     }
 }
