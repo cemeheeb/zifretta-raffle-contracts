@@ -11,7 +11,6 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/tonkeeper/tonapi-go"
-	"github.com/tonkeeper/tongo/ton"
 	"github.com/tonkeeper/tongo/wallet"
 	"go.uber.org/zap"
 )
@@ -91,94 +90,29 @@ func NewTracker(ctx context.Context) *Tracker {
 	}
 }
 
-func (t *Tracker) GetRaffleAccountDeployedLt() (int64, error) {
-	var lastTraceID *tonapi.TraceID = nil
-
-	raffleAccountID, err := ton.ParseAccountID(t.raffleAddress)
-	if err != nil {
-		logger.Fatal("verify raffle account: failed to parse raffle address", zap.String("raffle address", t.raffleAddress), zap.Error(err))
-		return 0, err
-	}
-
-	var beforeLt = tonapi.OptInt64{Value: 0, Set: false}
-	for {
-		if lastTraceID != nil {
-			lastTrace, err := infinityRateLimitRetry(
-				func() (*tonapi.Trace, error) {
-					return t.client.GetTrace(t.ctx, tonapi.GetTraceParams{TraceID: lastTraceID.GetID()})
-				},
-			)
-			if err != nil {
-				return 0, err
-			}
-			beforeLt = tonapi.NewOptInt64(lastTrace.Transaction.Lt)
-		}
-
-		logger.Debug("verify raffle account: search first traceID")
-		accountTracesResult, err := infinityRateLimitRetry(
-			func() (*tonapi.TraceIDs, error) {
-				return t.client.GetAccountTraces(t.ctx, tonapi.GetAccountTracesParams{
-					AccountID: raffleAccountID.ToRaw(),
-					Limit:     tonapi.NewOptInt(GlobalLimitWindowSize),
-					BeforeLt:  beforeLt,
-				})
-			})
-
-		if err != nil {
-			logger.Fatal("verify raffle account: failed to search first traceID", zap.Error(err))
-			return 0, err
-		}
-
-		if len(accountTracesResult.Traces) > 0 {
-			lastTraceID = &accountTracesResult.Traces[len(accountTracesResult.Traces)-1]
-		}
-
-		logger.Debug("verify raffle account: check conditions in proper to continue", zap.Int("trace count", len(accountTracesResult.Traces)))
-		if len(accountTracesResult.Traces) < GlobalLimitWindowSize {
-			break
-		}
-	}
-
-	if lastTraceID == nil {
-		return 0, errors.New("verify raffle account: no traces found")
-	}
-
-	lastTrace, err := infinityRateLimitRetry(
-		func() (*tonapi.Trace, error) {
-			return t.client.GetTrace(t.ctx, tonapi.GetTraceParams{TraceID: lastTraceID.GetID()})
-		},
-	)
-
-	if err != nil {
-		return 0, err
-	}
-
-	return lastTrace.Transaction.GetLt(), nil
-}
-
-func (t *Tracker) Run(raffleStartedLt int64) {
+func (t *Tracker) Run(raffleDeployedLt int64, minCandidateReachedLt int64, maxParticipantUnixTime int64) {
 
 	log.Printf("\n\n GATHERING CANDIDATE REGISTRATIONS \n\n")
 
-	err := t.collectCandidateRegistrationActions(t.raffleAddress, raffleStartedLt)
+	err := t.collectCandidateRegistrationActions(t.raffleAddress, raffleDeployedLt)
 	if err != nil {
 		panic("failed to collect candidate registration actions")
 	}
 
 	log.Printf("\n\n GATHERING WHITE TICKET MINTED \n\n")
-	err = t.collectWhiteTicketMintedActions(raffleStartedLt)
+	err = t.collectWhiteTicketMintedActions(raffleDeployedLt)
 	if err != nil {
 		panic("failed to collect white ticket mints")
 	}
 
 	log.Printf("\n\n GATHERING BLACK TICKET PURCHASES \n\n")
-	err = t.collectBlackTicketPurchasedActions(raffleStartedLt)
+	err = t.collectBlackTicketPurchasedActions(raffleDeployedLt)
 	if err != nil {
 		panic("failed to collect black ticket purchase")
 	}
 
 	log.Printf("\n\n GATHERING PARTICIPANT REGISTRATIONS \n\n")
-	err = t.collectParticipantRegistrationActions(t.raffleAddress, raffleStartedLt)
+	err = t.collectParticipantRegistrationActions(t.raffleAddress, raffleDeployedLt)
 	if err != nil {
 		panic("failed to collect participant registration actions")
 	}

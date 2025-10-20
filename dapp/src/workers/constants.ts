@@ -1,0 +1,1 @@
+export const RAFFLE_BOC_HASH = "98c1173cf3ad4e58bbaaaf51a9cd3155cd348ffed8f67fb6234f7f0affe17a21";

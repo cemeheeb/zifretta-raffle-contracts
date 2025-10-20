@@ -8,8 +8,8 @@ import (
 )
 
 type RaffleSetConditionMessage struct {
-	AttachedTon          tlb.Grams
-	RaffleAddress        ton.AccountID
+	Amount               tlb.Grams
+	Address              ton.AccountID
 	UserAddress          ton.AccountID
 	WhiteTicketMinted    uint8
 	BlackTicketPurchased uint8
@@ -30,19 +30,19 @@ func (m RaffleSetConditionMessage) ToInternal() (tlb.Message, uint8, error) {
 	if err := tlb.Marshal(cell, m.UserAddress.ToMsgAddress()); err != nil {
 		return tlb.Message{}, 0, err
 	}
-	if err := cell.WriteUint(uint64(m.WhiteTicketMinted), 8); err != nil {
-		return tlb.Message{}, 0, err
-	}
 	if err := cell.WriteUint(uint64(m.BlackTicketPurchased), 8); err != nil {
 		return tlb.Message{}, 0, err
 	}
-	if err := cell.WriteUint(0, 256-8-8); err != nil {
+	if err := cell.WriteUint(uint64(m.WhiteTicketMinted), 8); err != nil {
+		return tlb.Message{}, 0, err
+	}
+	if err := cell.WriteUint(0, 240); err != nil {
 		return tlb.Message{}, 0, err
 	}
 
 	message := wallet.Message{
-		Amount:  m.AttachedTon,
-		Address: m.RaffleAddress,
+		Amount:  m.Amount,
+		Address: m.Address,
 		Bounce:  true,
 		Mode:    wallet.DefaultMessageMode,
 		Body:    cell,

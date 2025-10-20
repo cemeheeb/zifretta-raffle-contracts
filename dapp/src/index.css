@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  .k-tabbar-link-active {
+    outline: none;
+  }
+}

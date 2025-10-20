@@ -32,13 +32,22 @@ func main() {
 			panic(err)
 		}
 
+		raffleAccountData, err := trackerInstance.GetRaffleAccountData()
+		if err != nil {
+			panic(err)
+		}
+
 		for {
 			select {
 			case <-ctx.Done():
 				trackerInstance.Finalize()
 				return
 			default:
-				trackerInstance.Run(raffleAccountDeployedAt)
+				trackerInstance.Run(
+					raffleAccountDeployedAt,
+					int64(raffleAccountData.MinCandidateReachedLt),
+					raffleAccountData.MinCandidateReachedUnixTime+int64(raffleAccountData.ConditionsDuration),
+				)
 			}
 		}
 	}()

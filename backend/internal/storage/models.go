@@ -1,7 +1,7 @@
 package storage
 
 type UserStatus struct {
-	Address                         string `gorm:"primaryKey"`
+	UserAddress                     string `gorm:"primaryKey"`
 	WhiteTicketMinted               uint8  `gorm:"default:0"`
 	BlackTicketPurchased            uint8  `gorm:"default:0"`
 	CandidateRegistrationLt         int64  `gorm:"not null"`
@@ -12,15 +12,17 @@ type UserStatus struct {
 }
 
 type UserAction struct {
-	ID              int64      `gorm:"primaryKey"`
-	ActionType      ActionType `gorm:"uniqueIndex:idx_action_type_address"`
-	Address         string     `gorm:"uniqueIndex:idx_action_type_address"`
-	TransactionHash string     `gorm:"not null"`
-	TransactionLt   int64      `gorm:"not null"`
+	ID                  int64      `gorm:"primaryKey"`
+	ActionType          ActionType `gorm:"uniqueIndex:idx_unique_action"`
+	UserAddress         string     `gorm:"uniqueIndex:idx_unique_action"`
+	Address             string     `gorm:"uniqueIndex:idx_unique_action"`
+	TransactionHash     string     `gorm:"not null"`
+	TransactionLt       int64      `gorm:"not null"`
+	TransactionUnixTime int64      `gorm:"not null"`
 }
 
 type UserActionTouch struct {
 	ActionType    ActionType `gorm:"primaryKey"`
-	Address       string     `gorm:"primaryKey"`
+	UserAddress   string     `gorm:"primaryKey"`
 	TransactionLt int64      `gorm:"not null"`
 }

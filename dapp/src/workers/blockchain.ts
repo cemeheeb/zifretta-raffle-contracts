@@ -1,7 +1,13 @@
 import {Address, TupleItemInt, TupleItemSlice} from "@ton/core";
-import {TonApiClient, TraceIDs} from "@ton-api/client";
+import {TonApiClient, Transactions} from "@ton-api/client";
 
-import {BlockchainData, RaffleData, RaffleCandidateData, RaffleParticipantData} from "./types";
+import {RAFFLE_BOC_HASH} from "./constants";
+import {
+  BlockchainData,
+  RaffleData,
+  RaffleCandidateData,
+  RaffleParticipantData
+} from "./types";
 import {infinityRetry} from "./utils";
 
 interface BlockchainDataRequest {
@@ -17,9 +23,9 @@ interface BlockchainDataResponse {
 const context: Worker = self as any;
 const client: TonApiClient = new TonApiClient();
 
-const getBlockchainRaffleData = async (raffleAddress: Address): Promise<RaffleData> => {
+const getBlockchainRaffleData = async (raffleAddress: string): Promise<RaffleData> => {
   const raffleData = await infinityRetry(
-    () => client.blockchain.execGetMethodForBlockchainAccount(raffleAddress, "raffleData")
+    () => client.blockchain.execGetMethodForBlockchainAccount(Address.parse(raffleAddress), "raffleData")
   );
 
   return {
@@ -44,13 +50,15 @@ const getBlockchainRaffleCandidateData = async (raffleCandidateAddress: Address)
     () => client.blockchain.execGetMethodForBlockchainAccount(raffleCandidateAddress, "raffleCandidateData")
   );
 
+  console.log(raffleCandidateData);
+
   return {
-    address: raffleCandidateAddress,
+    address: raffleCandidateAddress.toRawString(),
     conditions: {
       blackTicketPurchased: BigInt((raffleCandidateData.stack[0] as TupleItemSlice).cell.asSlice().loadUint(8)),
       whiteTicketMinted: BigInt((raffleCandidateData.stack[0] as TupleItemSlice).cell.asSlice().loadUint(8))
     },
-    participantIndex: (raffleCandidateData.stack[1] as TupleItemInt).value,
+    participantIndex: raffleCandidateData.stack.length > 2 ? (raffleCandidateData.stack[2] as TupleItemInt).value : undefined,
   }
 }
 
@@ -60,70 +68,90 @@ const getBlockchainRaffleParticipantData = async (raffleParticipantAddress: Addr
   );
 
   return {
-    address: raffleParticipantAddress,
+    address: raffleParticipantAddress.toRawString(),
     participantIndex: (raffleCandidateData.stack[0] as TupleItemInt).value,
-    userAddress: raffleCandidateData.stack.length > 1 ? (raffleCandidateData.stack[1] as TupleItemSlice).cell.beginParse().loadAddress() : null,
-    winnerIndex: raffleCandidateData.stack.length > 2 ? (raffleCandidateData.stack[2] as TupleItemInt).value : null
+    userAddress: raffleCandidateData.stack.length > 1 ? (raffleCandidateData.stack[1] as TupleItemSlice).cell.beginParse().loadAddress().toRawString() : undefined,
+    winnerIndex: raffleCandidateData.stack.length > 2 ? (raffleCandidateData.stack[2] as TupleItemInt).value : undefined
   }
 }
 
 
 const getBlockchainRaffleCandidateAddress = async (raffleAddress: Address, userAddress: Address): Promise<Address> => {
+  console.log("getBlockchainRaffleCandidateAddress", userAddress.toString({ bounceable: true }));
   const raffleCandidateAddressResult = await infinityRetry(
-    () => client.blockchain.execGetMethodForBlockchainAccount(raffleAddress, "raffleCandidateAddress")
+    () => client.blockchain.execGetMethodForBlockchainAccount(raffleAddress, "raffleCandidateAddress", {
+      args: [userAddress.toString({bounceable: true})],
+    })
   );
 
   return (raffleCandidateAddressResult.stack.pop() as TupleItemSlice).cell.beginParse().loadAddress();
 }
 
 const getBlockchainRaffleParticipantAddress = async (raffleAddress: Address, participantIndex: bigint): Promise<Address> => {
+  console.log("getBlockchainRaffleParticipantAddress", participantIndex);
+
   const raffleParticipantAddressResult = await infinityRetry(
-    () => client.blockchain.execGetMethodForBlockchainAccount(raffleAddress, "raffleParticipantAddress")
+    () => client.blockchain.execGetMethodForBlockchainAccount(raffleAddress, "raffleParticipantAddress", {
+      args: [participantIndex.toString()]
+    })
   );
 
   return (raffleParticipantAddressResult.stack.pop() as TupleItemSlice).cell.beginParse().loadAddress();
 }
 
-const getBlockchainData = async (oracleAddress: Address, userAddress: Address): Promise<BlockchainDataResponse> => {
+const getBlockchainData = async (oracleAddress: string, userAddress: string): Promise<BlockchainDataResponse> => {
+  const limit = 100;
 
-  const traceFrame = 100;
-
-  let blockchainAccountTracesResult: TraceIDs;
-  let beforeLt: bigint;
-
-  do {
-    blockchainAccountTracesResult = await infinityRetry(() => client.accounts.getAccountTraces(oracleAddress));
-  } while (blockchainAccountTracesResult.traces.length < traceFrame);
-
+  let blockchainAccountTransactionsResult: Transactions;
   const blockchainData: BlockchainData = {
     raffles: []
   };
 
-  for (const traceID of blockchainAccountTracesResult.traces) {
+  let beforeLt: bigint | undefined = undefined;
 
-    const traceResult = await infinityRetry(() => client.traces.getTrace(traceID.id))
-    for (const message of traceResult.transaction.outMsgs.filter(message => !message.bounced)) {
+  do {
+    blockchainAccountTransactionsResult = await infinityRetry(async () =>
+      client.blockchain.getBlockchainAccountTransactions(Address.parse(oracleAddress), {
+        before_lt: beforeLt,
+        limit
+      }));
 
-      if (message.opCode === BigInt(0x33010000) && message.destination) {
-        const raffleData = await getBlockchainRaffleData(message.destination?.address);
-        const raffleCandidateAddress = await getBlockchainRaffleCandidateAddress(message.destination?.address, userAddress);
-        const raffleCandidateData = await getBlockchainRaffleCandidateData(raffleCandidateAddress);
+    for (const transaction of blockchainAccountTransactionsResult.transactions) {
+      for (const message of transaction.outMsgs) {
+        if (!message) {
+          continue;
+        }
 
-        if (raffleCandidateData.participantIndex !== null) {
+        if (!message?.init) {
+          continue;
+        }
 
-          const raffleParticipantAddress = await getBlockchainRaffleParticipantAddress(message.destination?.address, raffleCandidateData.participantIndex);
-          const raffleParticipantData = await getBlockchainRaffleParticipantData(raffleParticipantAddress);
+        if (message?.init?.boc.beginParse().loadRef().hash().toString("hex") === RAFFLE_BOC_HASH && message?.destination) {
+          const raffleData = await getBlockchainRaffleData(message?.destination?.address.toString({ bounceable: true }));
+          const raffleCandidateAddress = await getBlockchainRaffleCandidateAddress(message.destination?.address, Address.parse(userAddress));
 
-          blockchainData.raffles.push({
-            raffleData,
-            raffleCandidateData,
-            raffleParticipantData,
-            winnersData: []
-          });
+          let raffleCandidateData: RaffleCandidateData | undefined = undefined;
+          try {
+            raffleCandidateData = await getBlockchainRaffleCandidateData(raffleCandidateAddress);
+            let raffleParticipantData: RaffleParticipantData | undefined = undefined;
+            if (raffleCandidateData.participantIndex !== undefined) {
+              const raffleParticipantAddress = await getBlockchainRaffleParticipantAddress(message.destination?.address, raffleCandidateData.participantIndex);
+              raffleParticipantData = await getBlockchainRaffleParticipantData(raffleParticipantAddress);
+            }
+
+            blockchainData.raffles.push({
+              raffleData,
+              raffleCandidateData,
+              raffleParticipantData,
+              winnersData: []
+            });
+          } catch {
+            console.log("raffleCandidateData is not deployed");
+          }
         }
       }
     }
-  }
+  } while (blockchainAccountTransactionsResult.transactions.length === limit);
 
   return {data: blockchainData};
 };
@@ -131,7 +159,7 @@ const getBlockchainData = async (oracleAddress: Address, userAddress: Address): 
 context.onmessage = async (e: MessageEvent<BlockchainDataRequest>) => {
   try {
     const {oracleAddress, userAddress} = e.data;
-    const blockchainDataResponse = await getBlockchainData(Address.parse(oracleAddress), Address.parse(userAddress));
+    const blockchainDataResponse = await getBlockchainData(oracleAddress, userAddress);
     context.postMessage({type: 'success', data: blockchainDataResponse});
   } catch (error) {
     context.postMessage({

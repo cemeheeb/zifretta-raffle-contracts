@@ -9,10 +9,11 @@ import (
 	"github.com/tonkeeper/tongo"
 	"github.com/tonkeeper/tongo/boc"
 	"github.com/tonkeeper/tongo/tlb"
+	"github.com/tonkeeper/tongo/ton"
 	"go.uber.org/zap"
 )
 
-func (t *Tracker) collectWhiteTicketMintedActions(raffleStartedLt int64) error {
+func (t *Tracker) collectWhiteTicketMintedActions(raffleDeployedLt int64) error {
 	logger.Debug("collect white ticket minted actions...")
 	var actions = make([]*storage.UserAction, 0)
 
@@ -23,10 +24,12 @@ func (t *Tracker) collectWhiteTicketMintedActions(raffleStartedLt int64) error {
 	}
 
 	var transactionLt int64 = 0
+	var transactionUnixTime int64 = 0
 	var maxTransactionLt int64 = 0
 	var beforeLt int64 = 0
 
 	for {
+		logger.Debug("white ticket minted: collect traces... iteration", zap.Int64("current beforeLt", beforeLt))
 		accountTracesResult, err := infinityRateLimitRetry(
 			func() (*tonapi.TraceIDs, error) {
 				return t.client.GetAccountTraces(t.ctx, tonapi.GetAccountTracesParams{
@@ -40,21 +43,25 @@ func (t *Tracker) collectWhiteTicketMintedActions(raffleStartedLt int64) error {
 			})
 
 		if err != nil {
-			return nil
+			logger.Fatal("white ticket minted: collect traces... failed", zap.Error(err))
+			return err
 		}
 
 		for _, traceID := range accountTracesResult.GetTraces() {
+			logger.Debug("white ticket minted: collect trace details... iteration", zap.String("trace id", traceID.GetID()))
 			trace, err := infinityRateLimitRetry(
 				func() (*tonapi.Trace, error) {
 					return t.client.GetTrace(t.ctx, tonapi.GetTraceParams{TraceID: traceID.GetID()})
-				})
+				},
+			)
 
 			if err != nil {
 				logger.Fatal("white ticket minted: cannot get white ticket collection account trace", zap.Error(err))
-				return err
+				break
 			}
 
-			transactionLt = trace.Transaction.GetLt()
+			transactionLt = trace.Transaction.Lt
+			transactionUnixTime = trace.Transaction.Utime
 			maxTransactionLt = max(maxTransactionLt, transactionLt)
 
 			if transactionLt <= lastWhiteTicketMintedLt {
@@ -63,39 +70,39 @@ func (t *Tracker) collectWhiteTicketMintedActions(raffleStartedLt int64) error {
 			}
 
 			beforeLt = walkTracesWhiteTicketMinted(trace, func(inner *tonapi.Trace, hasMintOpCode bool) {
-				logger.Debug("white ticket minted: found trace", zap.Int64("transaction at", transactionLt))
+				transactionLt = inner.Transaction.Lt
+				transactionUnixTime = inner.Transaction.Utime
+				transactionHash, processedUserAddress, processedTicketAddress, ok := processCollectWhiteTicketMintedTrace(inner, hasMintOpCode)
 
-				transactionLt = inner.Transaction.GetLt()
-				maxTransactionLt = max(maxTransactionLt, transactionLt)
-
-				if transactionLt <= lastWhiteTicketMintedLt {
-					return
-				}
-
-				transactionHash, address, ok := processCollectWhiteTicketMintedTrace(inner, hasMintOpCode)
 				if ok && transactionLt > lastWhiteTicketMintedLt {
-					logger.Debug("white ticket minted: append action", zap.String("address", address))
+					logger.Info("white ticket minted: append action",
+						zap.String("user address", processedUserAddress),
+						zap.String("ticket address", processedUserAddress),
+					)
+
 					actions = append(actions, &storage.UserAction{
-						ActionType:      storage.WhiteTicketMintedActionType,
-						Address:         address,
-						TransactionLt:   transactionLt,
-						TransactionHash: transactionHash,
+						ActionType:          storage.WhiteTicketMintedActionType,
+						UserAddress:         processedUserAddress,
+						Address:             processedTicketAddress,
+						TransactionLt:       transactionLt,
+						TransactionHash:     transactionHash,
+						TransactionUnixTime: transactionUnixTime,
 					})
 				} else {
 					logger.Debug("white ticket minted: trace cannot be processed, skip")
 				}
-			}, false, lastWhiteTicketMintedLt, raffleStartedLt)
+			}, false, lastWhiteTicketMintedLt, raffleDeployedLt)
 
-			if beforeLt < raffleStartedLt {
-				logger.Debug("white ticket minted: raffle start time reached, finalize traces results...")
+			if beforeLt < raffleDeployedLt {
+				logger.Debug("raffle candidate registration: raffle start time reached, finalize traces results...")
 				break
 			}
 
-			logger.Debug("white ticket minted: process account trace... iteration done")
+			logger.Debug("white ticket minted: process account trace... iteration done", zap.Int64("transaction lt", transactionUnixTime))
 		}
 
-		if len(accountTracesResult.GetTraces()) < GlobalLimitWindowSize || beforeLt <= raffleStartedLt || transactionLt <= lastWhiteTicketMintedLt {
-			logger.Debug("white ticket minted: exit condition reached, finalize traces results...")
+		if len(accountTracesResult.GetTraces()) < GlobalLimitWindowSize || beforeLt < raffleDeployedLt || transactionLt <= lastWhiteTicketMintedLt {
+			logger.Debug("white ticket minted: exit condition reached, finalize traces results...", zap.Int64("transaction lt", transactionUnixTime))
 			break
 		}
 
@@ -105,7 +112,7 @@ func (t *Tracker) collectWhiteTicketMintedActions(raffleStartedLt int64) error {
 	if maxTransactionLt > lastWhiteTicketMintedLt {
 		actionTouch := &storage.UserActionTouch{
 			ActionType:    storage.WhiteTicketMintedActionType,
-			Address:       t.whiteTicketCollectionAddress,
+			UserAddress:   "-",
 			TransactionLt: maxTransactionLt,
 		}
 		err := t.storage.UpdateUserActionTouch(actionTouch)
@@ -156,7 +163,7 @@ func walkTracesWhiteTicketMinted(trace *tonapi.Trace, callback func(*tonapi.Trac
 	return beforeLt
 }
 
-func processCollectWhiteTicketMintedTrace(trace *tonapi.Trace, hasMintOpCode bool) (string, string, bool) {
+func processCollectWhiteTicketMintedTrace(trace *tonapi.Trace, hasMintOpCode bool) (string, string, string, bool) {
 	logger.Debug("white ticket minted: process collect white ticket minted trace...", zap.String("hash", trace.Transaction.GetHash()))
 
 	message, ok := trace.Transaction.GetInMsg().Get()
@@ -168,7 +175,7 @@ func processCollectWhiteTicketMintedTrace(trace *tonapi.Trace, hasMintOpCode boo
 			body, err := boc.DeserializeBocHex(message.GetRawBody().Value)
 			if err != nil {
 				logger.Debug("white ticket minted: failed to deserialize boc hex... skip", zap.String("hash", trace.Transaction.GetHash()))
-				return "", "", false
+				return "", "", "", false
 			}
 
 			bodyCell := body[0]
@@ -177,20 +184,32 @@ func processCollectWhiteTicketMintedTrace(trace *tonapi.Trace, hasMintOpCode boo
 			err = tlb.Unmarshal(bodyCell, &userAccountAddress)
 			if err != nil {
 				logger.Debug("white ticket minted: failed to read user address due to address tlb scheme... skip", zap.String("hash", trace.Transaction.GetHash()))
-				return "", "", false
+				return "", "", "", false
 			}
 
 			userAccountID, err := tongo.AccountIDFromTlb(userAccountAddress)
 			if userAccountID == nil || err != nil {
 				logger.Debug("white ticket minted: invalid user address... skip", zap.String("hash", trace.Transaction.GetHash()))
-				return "", "", false
+				return "", "", "", false
+			}
+
+			inMessageDestination, ok := message.Destination.Get()
+			if !ok {
+				logger.Debug("white ticket minted: destination account address missing... skip")
+				return "", "", "", false
+			}
+
+			inMessageDestinationAccountID, err := ton.ParseAccountID(inMessageDestination.Address)
+			if err != nil {
+				logger.Debug("white ticket minted: failed to parse destination account address... skip")
+				return "", "", "", false
 			}
 
 			logger.Debug("process collect white ticket minted trace... done", zap.String("hash", trace.Transaction.GetHash()))
-			return message.GetHash(), userAccountID.ToHuman(true, false), true
+			return message.GetHash(), userAccountID.ToHuman(true, false), inMessageDestinationAccountID.ToHuman(true, false), true
 		}
 	}
 
 	logger.Debug("process collect white ticket minted trace... skip", zap.String("hash", trace.Transaction.GetHash()))
-	return "", "", false
+	return "", "", "", false
 }

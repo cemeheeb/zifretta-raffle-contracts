@@ -1,12 +1,10 @@
-import {Address} from '@ton/core';
-
 export type RaffleConditions = {
   blackTicketPurchased: bigint;
   whiteTicketMinted: bigint;
 }
 
 export type RaffleData = {
-  address: Address;
+  address: string;
   minCandidateQuantity: bigint;
   conditionsDuration: bigint;
   conditions: RaffleConditions;
@@ -19,22 +17,22 @@ export type RaffleData = {
 }
 
 export type RaffleCandidateData = {
-  address: Address;
+  address: string;
   conditions: RaffleConditions;
-  participantIndex: bigint | null;
+  participantIndex?: bigint;
 }
 
 export type RaffleParticipantData = {
-  address: Address;
+  address: string;
   participantIndex: bigint;
-  userAddress: Address | null;
-  winnerIndex: bigint | null;
+  userAddress?: string;
+  winnerIndex?: bigint;
 }
 
 export type Raffle = {
   raffleData: RaffleData;
-  raffleCandidateData: RaffleCandidateData;
-  raffleParticipantData: RaffleParticipantData;
+  raffleCandidateData?: RaffleCandidateData;
+  raffleParticipantData?: RaffleParticipantData;
   winnersData: RaffleParticipantData[]
 }
 
@@ -42,16 +40,19 @@ export type BlockchainData = {
   raffles: Raffle[];
 }
 
-export const selectorActiveRafflesData = (blockchainData: BlockchainData) => {
-  return blockchainData.raffles
-    .filter((raffle: Raffle) => raffle.raffleData.minCandidateReachedUnixTime > Date.now() / 1000)
-    .map((raffle: Raffle) => raffle.raffleData);
+export enum RaffleState {
+  Qualification,
+  Waiting,
+  Conditions,
+  Timer,
+  Participation,
+  Result
 }
 
-export const selectorNonActiveRafflesData = (blockchainData: BlockchainData) => {
-  return blockchainData.raffles
-    .filter((raffle: Raffle) => raffle.raffleData.minCandidateReachedUnixTime <= Date.now() / 1000)
-    .map((raffle: Raffle) => raffle.raffleData);
+export enum RaffleProgressStep {
+  Waiting,
+  Timer,
+  Participation,
 }
 
 

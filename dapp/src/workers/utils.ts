@@ -4,11 +4,15 @@ type RetryOptions = {
   shouldRetry?: (error: any) => boolean;
 };
 
+export async function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function withRetry<T>(
   delegate: () => Promise<T>,
   options?: RetryOptions
 ): Promise<T> {
-  const { retries = 3, delayMs = 1000, shouldRetry = () => true } = options || {};
+  const { retries = 30, delayMs = 1000, shouldRetry = () => true } = options || {};
   let attempts = 0;
 
   while (attempts <= retries) {
@@ -28,8 +32,12 @@ async function withRetry<T>(
 }
 
 export async function infinityRetry<T>(delegate: () => Promise<T>) {
+  await sleep(1000);
   return await withRetry<T>(delegate, {
     retries: 999,
-    shouldRetry: ({error}) => error === "rate limit: free tier",
+    delayMs: 3000,
+    shouldRetry: (error) => {
+      console.log("shouldRetry", error.message);
+      return error.message === "rate limit: free tier"},
   });
 }

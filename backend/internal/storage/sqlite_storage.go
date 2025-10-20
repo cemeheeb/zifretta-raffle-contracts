@@ -59,7 +59,7 @@ func (s *SqliteStorage) UpdateUserActions(actions []*UserAction) error {
 	}
 
 	err := s.db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "action_type"}, {Name: "address"}},
+		Columns:   []clause.Column{{Name: "action_type"}, {Name: "user_address"}, {Name: "address"}},
 		DoUpdates: clause.AssignmentColumns([]string{"transaction_lt", "transaction_hash"}),
 	}).CreateInBatches(actions, 100).Error
 
@@ -96,7 +96,7 @@ func (s *SqliteStorage) GetUserActionTouchByAddress(actionType ActionType, addre
 	err := s.db.Raw(`
 		select coalesce(max(transaction_lt), 0) as transaction_lt
 		from user_action_touches
-		where action_type = ? and address = ?
+		where action_type = ? and user_address = ?
 	`, actionType, address).Scan(&transactionLt).Error
 
 	if err != nil {
@@ -111,7 +111,7 @@ func (s *SqliteStorage) UpdateUserActionTouch(actionTouch *UserActionTouch) erro
 	logger.Debug("updating pending action touch...")
 
 	err := s.db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "action_type"}, {Name: "address"}},
+		Columns:   []clause.Column{{Name: "action_type"}, {Name: "user_address"}},
 		DoUpdates: clause.AssignmentColumns([]string{"transaction_lt"}),
 	}).Create(&actionTouch).Error
 
@@ -129,8 +129,8 @@ func (s *SqliteStorage) GetPendingCandidateRegistrationActions() ([]*UserAction,
 	rows, err := s.db.Raw(`
 		select a.*
 		from user_actions a
-			left join user_statuses s on s.address = a.address
-		where a.action_type = ? and s.address is null
+			left join user_statuses s on s.user_address = a.user_address
+		where a.action_type = ? and s.user_address is null
 	`, CandidateRegistrationActionType).Rows()
 	if err != nil {
 		logger.Fatal(err.Error())
@@ -166,7 +166,7 @@ func (s *SqliteStorage) GetPendingParticipantRegistrationActions() ([]*UserActio
 	rows, err := s.db.Raw(`
 		select a.*
 		from user_actions a
-			left join user_statuses s on s.address = a.address
+			left join user_statuses s on s.user_address = a.user_address
 		where a.action_type = ?
 	`, ParticipantRegistrationActionType).Rows()
 	if err != nil {
@@ -202,7 +202,7 @@ func (s *SqliteStorage) GetPendingWhiteTicketMintedActions() ([]*UserAction, err
 	rows, err := s.db.Raw(`
 		select a.*
 		from user_actions a
-				 left join user_statuses s on s.address = a.address
+				 left join user_statuses s on s.user_address = a.user_address
 		where a.action_type = ?
 		  and (s.white_ticket_minted_processed_lt < a.transaction_lt or s.white_ticket_minted_processed_lt = 0)
 	`, WhiteTicketMintedActionType).Rows()
@@ -240,7 +240,7 @@ func (s *SqliteStorage) GetPendingBlackTicketPurchasedActions() ([]*UserAction, 
 	rows, err := s.db.Raw(`
 		select a.*
 		from user_actions a
-			left join user_statuses s on s.address = a.address
+			left join user_statuses s on s.user_address = a.user_address
 		where a.action_type = ?
 		  and (s.black_ticket_purchased_processed_lt > a.transaction_lt or s.black_ticket_purchased_processed_lt = 0)
 	`, BlackTicketPurchasedActionType).Rows()
@@ -276,7 +276,7 @@ func (s *SqliteStorage) GetPendingBlackTicketPurchasedActions() ([]*UserAction, 
 func (s *SqliteStorage) GetUserStatusByAddress(address string) (*UserStatus, error) {
 
 	var userStatus UserStatus
-	err := s.db.Where("address = ?", address).First(&userStatus).Error
+	err := s.db.Where("user_address = ?", address).First(&userStatus).Error
 	if err != nil {
 		return nil, err
 	}
@@ -287,12 +287,34 @@ func (s *SqliteStorage) GetUserStatusByAddress(address string) (*UserStatus, err
 func (s *SqliteStorage) GetUserStatusesByAddresses(addresses []string) ([]*UserStatus, error) {
 
 	var userStatuses []*UserStatus
-	tx := s.db.Where("address in ?", addresses).Find(&userStatuses)
+	tx := s.db.Where("user_address in ?", addresses).Find(&userStatuses)
 	if tx.Error != nil {
 		return nil, tx.Error
 	}
 
 	return userStatuses, nil
+}
+
+func (s *SqliteStorage) UpdateUserStatus(action *UserStatus) error {
+	logger.Debug("updating user status...")
+
+	tx := s.db.Clauses(clause.OnConflict{
+		Columns: []clause.Column{{Name: "user_address"}},
+		DoUpdates: clause.AssignmentColumns([]string{
+			"white_ticket_minted",
+			"white_ticket_minted_processed_lt",
+			"black_ticket_purchased",
+			"black_ticket_purchased_processed_lt",
+			"last_deployed_unix_time",
+		}),
+	}).Create(&action)
+	if tx.Error != nil {
+		logger.Fatal(tx.Error.Error())
+		return tx.Error
+	}
+
+	logger.Debug("updating user status...done")
+	return nil
 }
 
 func (s *SqliteStorage) UpdateUserStatuses(userStatuses []*UserStatus) error {
@@ -304,13 +326,13 @@ func (s *SqliteStorage) UpdateUserStatuses(userStatuses []*UserStatus) error {
 	}
 
 	err := s.db.Clauses(clause.OnConflict{
-		Columns: []clause.Column{{Name: "address"}},
+		Columns: []clause.Column{{Name: "user_address"}},
 		DoUpdates: clause.AssignmentColumns([]string{
 			"white_ticket_minted",
 			"white_ticket_minted_processed_lt",
 			"black_ticket_purchased",
 			"black_ticket_purchased_processed_lt",
-			"deployed_unix_time",
+			"last_deployed_unix_time",
 		}),
 	}).CreateInBatches(userStatuses, 100).Error
 	if err != nil {
@@ -318,27 +340,5 @@ func (s *SqliteStorage) UpdateUserStatuses(userStatuses []*UserStatus) error {
 	}
 
 	logger.Debug("update user statuses... done")
-	return nil
-}
-
-func (s *SqliteStorage) UpdateUserStatus(action *UserStatus) error {
-	logger.Debug("updating user status...")
-
-	tx := s.db.Clauses(clause.OnConflict{
-		Columns: []clause.Column{{Name: "address"}},
-		DoUpdates: clause.AssignmentColumns([]string{
-			"white_ticket_minted",
-			"white_ticket_minted_processed_lt",
-			"black_ticket_purchased",
-			"black_ticket_purchased_processed_lt",
-			"deployed_unix_time",
-		}),
-	}).Create(&action)
-	if tx.Error != nil {
-		logger.Fatal(tx.Error.Error())
-		return tx.Error
-	}
-
-	logger.Debug("updating user status...done")
 	return nil
 }

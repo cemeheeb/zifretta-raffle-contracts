@@ -19,7 +19,7 @@ func (t *Tracker) synchronizePendingCandidateRegistrationActions() error {
 	var userStatuses = make([]*storage.UserStatus, len(pendingActions))
 	for i, action := range pendingActions {
 		userStatuses[i] = &storage.UserStatus{
-			Address:                 action.Address,
+			UserAddress:             action.UserAddress,
 			CandidateRegistrationLt: action.TransactionLt,
 		}
 	}
@@ -42,12 +42,12 @@ func (t *Tracker) synchronizePendingWhiteTicketMintedActions() error {
 
 	addressPendingActionMap := make(map[string]*storage.UserAction)
 	for _, action := range pendingActions {
-		addressPendingActionMap[action.Address] = action
+		addressPendingActionMap[action.UserAddress] = action
 	}
 
 	addressQuantityMap := make(map[string]uint8)
 	for _, action := range pendingActions {
-		addressQuantityMap[action.Address] = addressQuantityMap[action.Address] + 1
+		addressQuantityMap[action.UserAddress] = addressQuantityMap[action.UserAddress] + 1
 	}
 
 	addresses := make([]string, 0, len(addressQuantityMap))
@@ -61,8 +61,8 @@ func (t *Tracker) synchronizePendingWhiteTicketMintedActions() error {
 	}
 
 	for _, userStatus := range userStatuses {
-		userStatus.WhiteTicketMinted = min(userStatus.WhiteTicketMinted+addressQuantityMap[userStatus.Address], 2)
-		userStatus.WhiteTicketMintedProcessedLt = addressPendingActionMap[userStatus.Address].TransactionLt
+		userStatus.WhiteTicketMinted = min(userStatus.WhiteTicketMinted+addressQuantityMap[userStatus.UserAddress], 2)
+		userStatus.WhiteTicketMintedProcessedLt = addressPendingActionMap[userStatus.UserAddress].TransactionLt
 
 		err = t.storage.UpdateUserStatus(userStatus)
 		if err != nil {
@@ -89,12 +89,12 @@ func (t *Tracker) synchronizePendingBlackTicketPurchasedActions() error {
 
 	addressPendingActionMap := make(map[string]*storage.UserAction)
 	for _, action := range pendingActions {
-		addressPendingActionMap[action.Address] = action
+		addressPendingActionMap[action.UserAddress] = action
 	}
 
 	addressQuantityMap := make(map[string]uint8)
 	for _, action := range pendingActions {
-		addressQuantityMap[action.Address] = addressQuantityMap[action.Address] + 1
+		addressQuantityMap[action.UserAddress] = addressQuantityMap[action.UserAddress] + 1
 	}
 
 	addresses := make([]string, 0, len(addressQuantityMap))
@@ -108,8 +108,8 @@ func (t *Tracker) synchronizePendingBlackTicketPurchasedActions() error {
 	}
 
 	for _, userStatus := range userStatuses {
-		userStatus.BlackTicketPurchased = min(userStatus.BlackTicketPurchased+addressQuantityMap[userStatus.Address], 2)
-		userStatus.BlackTicketPurchasedProcessedLt = addressPendingActionMap[userStatus.Address].TransactionLt
+		userStatus.BlackTicketPurchased = min(userStatus.BlackTicketPurchased+addressQuantityMap[userStatus.UserAddress], 2)
+		userStatus.BlackTicketPurchasedProcessedLt = addressPendingActionMap[userStatus.UserAddress].TransactionLt
 
 		err = t.storage.UpdateUserStatus(userStatus)
 		if err != nil {
@@ -137,7 +137,7 @@ func (t *Tracker) synchronizePendingParticipantRegistrationActions() error {
 	var userStatuses = make([]*storage.UserStatus, len(pendingActions))
 	for i, action := range pendingActions {
 		userStatuses[i] = &storage.UserStatus{
-			Address:                   action.Address,
+			UserAddress:               action.UserAddress,
 			ParticipantRegistrationLt: action.TransactionLt,
 		}
 	}
@@ -159,13 +159,13 @@ func (t *Tracker) invalidateConditions(status *storage.UserStatus) error {
 		return err
 	}
 
-	userAccountID, err := ton.ParseAccountID(status.Address)
+	userAccountID, err := ton.ParseAccountID(status.UserAddress)
 	if err != nil {
 		logger.Debug("invalidate conditions: cannot parse user account id, exiting...")
 		return err
 	}
 
-	if status.WhiteTicketMinted == 2 && status.BlackTicketPurchased == 2 && status.LastDeployedUnixTime+GlobalDeployedTimeout < time.Now().Unix() {
+	if status.WhiteTicketMinted == 2 && status.BlackTicketPurchased == 2 && ((status.LastDeployedUnixTime + GlobalDeployedTimeout) < time.Now().Unix()) {
 		err := t.sendSetConditions(raffleAccountID, userAccountID, status.WhiteTicketMinted, status.BlackTicketPurchased)
 		if err != nil {
 			logger.Debug("invalidate conditions: cannot send set conditions to blockchain, exiting...")
@@ -183,15 +183,15 @@ func (t *Tracker) invalidateConditions(status *storage.UserStatus) error {
 }
 
 func (t *Tracker) sendSetConditions(raffleAccountID ton.AccountID, userAccountID ton.AccountID, whiteTicketMinted uint8, blackTicketPurchased uint8) error {
-	message := blockchain.RaffleSetConditionMessage{
+
+	err := t.wallet.Send(t.ctx, blockchain.RaffleSetConditionMessage{
 		AttachedTon:          5_000_000_0, // 0.05 ton
 		RaffleAddress:        raffleAccountID,
 		UserAddress:          userAccountID,
 		WhiteTicketMinted:    whiteTicketMinted,
 		BlackTicketPurchased: blackTicketPurchased,
-	}
+	})
 
-	err := t.wallet.Send(t.ctx, message)
 	if err != nil {
 		return err
 	}
@@ -200,7 +200,13 @@ func (t *Tracker) sendSetConditions(raffleAccountID ton.AccountID, userAccountID
 }
 
 func (t *Tracker) synchronize() error {
+
 	err := t.synchronizePendingCandidateRegistrationActions()
+	if err != nil {
+		return err
+	}
+
+	err = t.synchronizePendingParticipantRegistrationActions()
 	if err != nil {
 		return err
 	}
@@ -211,11 +217,6 @@ func (t *Tracker) synchronize() error {
 	}
 
 	err = t.synchronizePendingBlackTicketPurchasedActions()
-	if err != nil {
-		return err
-	}
-
-	err = t.synchronizePendingParticipantRegistrationActions()
 	if err != nil {
 		return err
 	}

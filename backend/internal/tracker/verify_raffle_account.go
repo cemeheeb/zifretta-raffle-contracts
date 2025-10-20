@@ -36,21 +36,21 @@ func (t *Tracker) VerifyRaffleAccount() error {
 
 	logger.Debug("verify raffle account: raffle contract info:", zap.Int64("balance", raffleAccount.GetBalance()))
 
-	staticData, err := infinityRateLimitRetry(
+	raffleData, err := infinityRateLimitRetry(
 		func() (*tonapi.MethodExecutionResult, error) {
 			return t.client.ExecGetMethodForBlockchainAccount(t.ctx, tonapi.ExecGetMethodForBlockchainAccountParams{
 				AccountID:  t.raffleAddress,
-				MethodName: "staticData",
+				MethodName: "raffleData",
 				Args:       make([]string, 0),
 			})
 		})
 
 	if err != nil {
-		logger.Fatal("verify raffle account: failed to get staticData, invalid raffle contract")
+		logger.Fatal("verify raffle account: failed to get raffleData, invalid raffle contract")
 		return err
 	}
 
-	logger.Debug("verify raffle account: staticData", zap.Bool("success", staticData.GetSuccess()))
+	logger.Debug("verify raffle account: raffleData", zap.Bool("success", raffleData.GetSuccess()))
 
 	raffleCandidateAddressResult, err := infinityRateLimitRetry(
 		func() (*tonapi.MethodExecutionResult, error) {

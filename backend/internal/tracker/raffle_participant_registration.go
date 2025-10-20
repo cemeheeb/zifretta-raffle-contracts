@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (t *Tracker) collectParticipantRegistrationActions(raffleAddress string, raffleStartedLt int64) error {
+func (t *Tracker) collectParticipantRegistrationActions(raffleAddress string, raffleDeployedLt int64) error {
 
 	var actions = make([]*storage.UserAction, 0)
 
@@ -23,6 +23,7 @@ func (t *Tracker) collectParticipantRegistrationActions(raffleAddress string, ra
 	}
 
 	var transactionLt int64 = 0
+	var transactionUnixTime int64 = 0
 	var maxTransactionLt int64 = 0
 	var beforeLt int64 = 0
 
@@ -59,7 +60,8 @@ func (t *Tracker) collectParticipantRegistrationActions(raffleAddress string, ra
 				break
 			}
 
-			transactionLt = trace.Transaction.GetLt()
+			transactionLt = trace.Transaction.Lt
+			transactionUnixTime = trace.Transaction.Utime
 			maxTransactionLt = max(maxTransactionLt, transactionLt)
 
 			if transactionLt <= lastParticipantRegistrationLt {
@@ -68,26 +70,25 @@ func (t *Tracker) collectParticipantRegistrationActions(raffleAddress string, ra
 			}
 
 			beforeLt = walkTracesParticipantRegistration(trace, func(inner *tonapi.Trace) {
-				var transactionHash string
-				var address string
-				var ok bool
-
-				transactionLt, transactionHash, address, ok = processRaffleParticipantRegistrationTrace(inner)
-				maxTransactionLt = max(maxTransactionLt, transactionLt)
+				transactionLt = inner.Transaction.Lt
+				transactionUnixTime = inner.Transaction.Utime
+				transactionHash, processedUserAddress, processedParticipantAddress, ok := processRaffleParticipantRegistrationTrace(inner)
 
 				if ok && transactionLt > lastParticipantRegistrationLt {
 					actions = append(actions, &storage.UserAction{
-						ActionType:      storage.ParticipantRegistrationActionType,
-						Address:         address,
-						TransactionLt:   transactionLt,
-						TransactionHash: transactionHash,
+						ActionType:          storage.ParticipantRegistrationActionType,
+						UserAddress:         processedUserAddress,
+						Address:             processedParticipantAddress,
+						TransactionLt:       transactionLt,
+						TransactionHash:     transactionHash,
+						TransactionUnixTime: transactionUnixTime,
 					})
 				} else {
 					logger.Debug("raffle participant registration: trace cannot be processed, skip")
 				}
-			}, lastParticipantRegistrationLt, raffleStartedLt)
+			}, lastParticipantRegistrationLt, raffleDeployedLt)
 
-			if beforeLt < raffleStartedLt {
+			if beforeLt < raffleDeployedLt {
 				logger.Debug("raffle participant registration: raffle start time reached, finalize traces results...")
 				break
 			}
@@ -95,7 +96,7 @@ func (t *Tracker) collectParticipantRegistrationActions(raffleAddress string, ra
 			logger.Debug("raffle participant registration: collect trace details... iteration done")
 		}
 
-		if len(accountTracesResult.GetTraces()) < GlobalLimitWindowSize || beforeLt < raffleStartedLt || transactionLt < lastParticipantRegistrationLt {
+		if len(accountTracesResult.GetTraces()) < GlobalLimitWindowSize || beforeLt < raffleDeployedLt || transactionLt < lastParticipantRegistrationLt {
 			logger.Debug("raffle participant registration: exit condition reached, finalize traces results...")
 			break
 		}
@@ -107,7 +108,7 @@ func (t *Tracker) collectParticipantRegistrationActions(raffleAddress string, ra
 
 		actionTouch := &storage.UserActionTouch{
 			ActionType:    storage.ParticipantRegistrationActionType,
-			Address:       raffleAddress,
+			UserAddress:   "-",
 			TransactionLt: maxTransactionLt,
 		}
 
@@ -147,7 +148,7 @@ func walkTracesParticipantRegistration(trace *tonapi.Trace, callback func(*tonap
 	return beforeLt
 }
 
-func processRaffleParticipantRegistrationTrace(trace *tonapi.Trace) (int64, string, string, bool) {
+func processRaffleParticipantRegistrationTrace(trace *tonapi.Trace) (string, string, string, bool) {
 
 	raffleParticipantInitializeOpCode := tonapi.OptString{Value: "0x13370030", Set: true}
 	message, ok := trace.Transaction.GetInMsg().Get()
@@ -159,29 +160,50 @@ func processRaffleParticipantRegistrationTrace(trace *tonapi.Trace) (int64, stri
 		if isTargetOpCode && isDeployed && trace.Transaction.Success {
 			body, err := boc.DeserializeBocHex(message.GetRawBody().Value)
 			if err != nil {
-				return 0, "", "", false
+				logger.Debug("raffle participant registration: failed to deserialize trace body")
 			}
 
 			bodyCell := body[0]
 			err = bodyCell.Skip(32) //op-code
 			if err != nil {
-				return 0, "", "", false
+				logger.Debug("raffle participant registration: trace body cell underflow")
+				return "", "", "", false
 			}
 
 			var userAccountAddress tlb.MsgAddress
 			err = tlb.Unmarshal(bodyCell, &userAccountAddress)
 			if err != nil {
-				return 0, "", "", false
+				logger.Debug("raffle participant registration: user account address deserialisation failed")
+				return "", "", "", false
 			}
 
 			userAccountID, err := tongo.AccountIDFromTlb(userAccountAddress)
 			if userAccountID == nil || err != nil {
-				return 0, "", "", false
+				logger.Debug("raffle participant registration: user account address is invalid")
+				return "", "", "", false
 			}
 
-			return message.GetCreatedLt(), message.GetHash(), userAccountID.ToHuman(true, false), true
+			inMessage, ok := trace.Transaction.InMsg.Get()
+			if !ok {
+				logger.Debug("raffle participant registration: invalid trace data")
+				return "", "", "", false
+			}
+
+			inMessageDestination, ok := inMessage.Destination.Get()
+			if !ok {
+				logger.Debug("raffle participant registration: invalid trace in message")
+				return "", "", "", false
+			}
+
+			participantAddress, err := tongo.ParseAddress(inMessageDestination.Address)
+			if err != nil {
+				logger.Debug("raffle participant registration: invalid participant address")
+				return "", "", "", false
+			}
+
+			return message.GetHash(), userAccountID.ToHuman(true, false), participantAddress.ID.ToHuman(true, false), true
 		}
 	}
 
-	return 0, "", "", false
+	return "", "", "", false
 }
