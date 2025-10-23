@@ -20,7 +20,7 @@ func (t *Tracker) collectWhiteTicketMintedActions(raffleDeployedLt int64) error 
 	logger.Debug("get latest white ticket minted at")
 	lastWhiteTicketMintedLt, err := t.storage.GetUserActionTouch(storage.WhiteTicketMintedActionType)
 	if err != nil {
-		panic("failed to get max white ticket minted at")
+		panic(err)
 	}
 
 	var transactionLt int64 = 0

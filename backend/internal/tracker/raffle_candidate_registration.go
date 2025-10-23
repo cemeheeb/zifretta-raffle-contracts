@@ -19,7 +19,7 @@ func (t *Tracker) collectCandidateRegistrationActions(raffleAddress string, raff
 	var actions = make([]*storage.UserAction, 0)
 	lastCandidateRegistrationLt, err := t.storage.GetUserActionTouch(storage.CandidateRegistrationActionType)
 	if err != nil {
-		panic("failed to get max candidate registration at")
+		panic(err)
 	}
 
 	var transactionLt int64 = 0
@@ -127,7 +127,7 @@ func (t *Tracker) collectCandidateRegistrationActions(raffleAddress string, raff
 	if len(actions) > 0 {
 		err := t.storage.UpdateUserActions(actions)
 		if err != nil {
-			panic("failed to update pending candidate registration actions")
+			panic(err)
 		}
 	}
 

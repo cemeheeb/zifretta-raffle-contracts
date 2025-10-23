@@ -19,7 +19,7 @@ func (t *Tracker) collectParticipantRegistrationActions(raffleAddress string, ra
 	logger.Debug("raffle participant registration: get last participant registered at")
 	lastParticipantRegistrationLt, err := t.storage.GetUserActionTouch(storage.ParticipantRegistrationActionType)
 	if err != nil {
-		panic("failed to get max participant registration at")
+		panic(err)
 	}
 
 	var transactionLt int64 = 0
@@ -122,7 +122,7 @@ func (t *Tracker) collectParticipantRegistrationActions(raffleAddress string, ra
 	if len(actions) > 0 {
 		err := t.storage.UpdateUserActions(actions)
 		if err != nil {
-			panic("failed to update pending participant registration actions")
+			panic(err)
 		}
 	}
 

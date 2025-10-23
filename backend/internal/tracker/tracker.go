@@ -59,13 +59,13 @@ func NewTracker(ctx context.Context) *Tracker {
 	logger.Debug("tracker initialization: tonapi client...\n")
 	client, err := tonapi.NewClient(tonapi.TonApiURL, &tonapi.Security{})
 	if err != nil {
-		panic("tracker initialization: failed to initialize tonapi client")
+		panic(err)
 	}
 
 	logger.Debug("tracker initialization:  wallet...\n")
 	pk, err := wallet.SeedToPrivateKey(walletMnemonic)
 	if err != nil {
-		panic("tracker initialization: failed to initialize wallet")
+		panic(err)
 	}
 
 	logger.Debug("tracker initialization:", zap.Bool("private key is not empty", pk != nil))
@@ -75,7 +75,7 @@ func NewTracker(ctx context.Context) *Tracker {
 	oracleWallet, err := wallet.New(pk, wallet.Version(version), client)
 
 	if err != nil {
-		panic("failed to initialize wallet, possible wrong mnemonic")
+		panic(err)
 	}
 
 	logger.Debug("tracker initialization: initializing tracker... done")
@@ -96,31 +96,31 @@ func (t *Tracker) Run(raffleDeployedLt int64, minCandidateReachedLt int64, maxPa
 
 	err := t.collectCandidateRegistrationActions(t.raffleAddress, raffleDeployedLt)
 	if err != nil {
-		panic("failed to collect candidate registration actions")
+		panic(err)
 	}
 
 	log.Printf("\n\n GATHERING WHITE TICKET MINTED \n\n")
 	err = t.collectWhiteTicketMintedActions(raffleDeployedLt)
 	if err != nil {
-		panic("failed to collect white ticket mints")
+		panic(err)
 	}
 
 	log.Printf("\n\n GATHERING BLACK TICKET PURCHASES \n\n")
 	err = t.collectBlackTicketPurchasedActions(raffleDeployedLt)
 	if err != nil {
-		panic("failed to collect black ticket purchase")
+		panic(err)
 	}
 
 	log.Printf("\n\n GATHERING PARTICIPANT REGISTRATIONS \n\n")
 	err = t.collectParticipantRegistrationActions(t.raffleAddress, raffleDeployedLt)
 	if err != nil {
-		panic("failed to collect participant registration actions")
+		panic(err)
 	}
 
 	log.Printf("\n\n BLOCKCHAIN SYNCHRONIZATION \n\n")
 	err = t.synchronize()
 	if err != nil {
-		panic("failed to synchronize blockchain")
+		panic(err)
 	}
 }
 

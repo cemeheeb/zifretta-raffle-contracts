@@ -128,7 +128,7 @@ func (t *Tracker) collectBlackTicketPurchasedActions(raffleDeployedAt int64) err
 
 	if err != nil {
 		logger.Fatal("black ticket purchased: failed to get user actions", zap.Error(err))
-		panic("failed to get candidate registration actions")
+		panic(err)
 	}
 
 	for _, candidateAddressAction := range candidateAddressesActions {
@@ -136,7 +136,7 @@ func (t *Tracker) collectBlackTicketPurchasedActions(raffleDeployedAt int64) err
 		lastBlackTicketPurchasedByUserAt, err := t.storage.GetUserActionTouchByAddress(storage.BlackTicketPurchasedActionType, candidateAddressAction.UserAddress)
 		if err != nil {
 			logger.Fatal("failed to get last black ticket purchased at", zap.Error(err))
-			panic("failed to get max black ticket purchased at")
+			panic(err)
 		}
 
 		pendingActions, err := t.collectActionsBlackTicketPurchasedInternal(candidateAddressAction.UserAddress, lastBlackTicketPurchasedByUserAt, raffleDeployedAt)
@@ -152,7 +152,7 @@ func (t *Tracker) collectBlackTicketPurchasedActions(raffleDeployedAt int64) err
 		err = t.storage.UpdateUserActions(actions)
 		if err != nil {
 			logger.Fatal("black ticket purchased at", zap.Error(err))
-			panic("failed to update pending black ticket purchased actions")
+			panic(err)
 		}
 	}
 

@@ -30,7 +30,7 @@ func NewSqliteStorage() *SqliteStorage {
 	)
 
 	if err != nil {
-		panic("failed to apply database auto migrations")
+		panic(err)
 	}
 
 	return &SqliteStorage{
