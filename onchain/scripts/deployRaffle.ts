@@ -6,14 +6,15 @@ import {promptBigint} from "../wrappers/ui-utils";
 export async function run(provider: NetworkProvider) {
   const ui = provider.ui();
 
-  let minCandidateQuantity: bigint = await promptBigint('Minimum candidates quantity:', ui);
+  let minParticipantsQuantity: bigint = await promptBigint('Minimum candidates quantity:', ui);
+  let duration: bigint = await promptBigint('Participant registration await duration in seconds:', ui);
 
   const raffle = provider.open(
       await Raffle.createFromConfig(
           {
             ownerAddress: provider.sender().address!,
-            minParticipantsQuantity: minCandidateQuantity,
-            duration: 604800n, // 7 days in seconds
+            minParticipantsQuantity,
+            duration, // 7 days in seconds = 604800n
             conditions: {
               blackTicketPurchased: 2n,
               whiteTicketMinted: 2n

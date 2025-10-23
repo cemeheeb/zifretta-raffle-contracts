@@ -53,14 +53,14 @@ fun onInternalMessage(inMessage: InMessage) {
             assert (inMessage.senderAddress == storage.ownerAddress) throw ERROR_NOT_AUTHORIZED;
 
             if (storage.minParticipantReachedUnixTime > 0) {
-                assert (blockchain.now() < storage.minParticipantReachedUnixTime + SEVEN_DAYS) throw ERROR_EXPIRED;
+                assert (blockchain.now() < storage.minParticipantReachedUnixTime + storage.duration) throw ERROR_EXPIRED;
             }
 
             val candidate = calculateRaffleCandidateAddress(contract.getAddress(), inMessageBody.userAddress, storage.candidateCode);
             val candidateAddress = address.fromValidBuilder(candidate.buildAddress());
 
             val setConditionsMessage = createMessage({
-                bounce: true,
+                bounce: false,
                 dest: candidateAddress,
                 value: 0,
                 body: RaffleCandidateSetConditions {

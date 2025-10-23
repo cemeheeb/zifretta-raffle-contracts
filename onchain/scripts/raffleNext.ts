@@ -1,16 +1,12 @@
-import {Address, toNano} from '@ton/core';
+import {toNano} from '@ton/core';
 import {NetworkProvider} from '@ton/blueprint';
 
 import {Raffle} from '../wrappers/Raffle';
-import {promptBigint} from "../wrappers/ui-utils";
 
 export async function run(provider: NetworkProvider, args: string[]) {
   const ui = provider.ui();
 
   const address = await ui.inputAddress('Raffle address');
-  const userAddress = await ui.inputAddress('User address');
-  const blackTicketPurchased = await promptBigint('Amount of black ticket purchased', ui);
-  const whiteTicketMinted = await promptBigint('Amount of white ticket minted', ui);
 
   if (!(await provider.isContractDeployed(address))) {
     ui.write(`Error: Raffle contract at address ${address} is not deployed!`);
@@ -19,13 +15,10 @@ export async function run(provider: NetworkProvider, args: string[]) {
 
   const raffle = provider.open(Raffle.createFromAddress(address));
 
-  await raffle.sendConditions(provider.sender(), {
-    value: toNano("0.03"),
-    userAddress,
-    conditions: {
-      blackTicketPurchased,
-      whiteTicketMinted
-    }
+  await raffle.sendRaffleNext(provider.sender(), {
+    value: toNano("0.3"),
+    forwardAmount: toNano("0.15"),
+    message: "Congrats! You are winner!"
   });
 
   ui.clearActionPrompt();

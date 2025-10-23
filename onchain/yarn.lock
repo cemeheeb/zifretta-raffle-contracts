@@ -769,10 +769,10 @@
     arg "^5.0.2"
     fflate "^0.8.2"
 
-"@ton/blueprint@>=0.40.0":
-  version "0.40.0"
-  resolved "https://registry.yarnpkg.com/@ton/blueprint/-/blueprint-0.40.0.tgz#22a569a623eed8368fc4f758f4ef29b7599f13fb"
-  integrity sha512-DL0PDSgsZm7qmQTlCq+KbWjvzFTSQnRy4YQOHPfMpe3/Hla3BeblYiBCwFjk6ev7LXxcEPMlmliRnyXBO8DZuQ==
+"@ton/blueprint@0.38.0":
+  version "0.38.0"
+  resolved "https://registry.yarnpkg.com/@ton/blueprint/-/blueprint-0.38.0.tgz#bb6166251c025dbc81650aa4b10e199327dc003c"
+  integrity sha512-2N+rwSTdyTYo6Wry4VLg/jkZ/FjbXpT9KevLAqKXqxx5QLUN7Hs76wnNd3ORSIJJZ7/bnHtrenPQsuUxIwwi8g==
   dependencies:
     "@ton-api/client" "^0.2.0"
     "@ton-api/ton-adapter" "^0.2.0"
