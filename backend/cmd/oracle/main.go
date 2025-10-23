@@ -27,11 +27,6 @@ func main() {
 			panic(err)
 		}
 
-		raffleAccountDeployedAt, err := trackerInstance.GetRaffleAccountDeployedLt()
-		if err != nil {
-			panic(err)
-		}
-
 		raffleAccountData, err := trackerInstance.GetRaffleAccountData()
 		if err != nil {
 			panic(err)
@@ -44,7 +39,7 @@ func main() {
 				return
 			default:
 				trackerInstance.Run(
-					raffleAccountDeployedAt,
+					61946738000007, // ХАРДКОД LT от 26 сентября приблизительно с 20:00 по Мск
 					int64(raffleAccountData.MinCandidateReachedLt),
 					raffleAccountData.MinCandidateReachedUnixTime+int64(raffleAccountData.ConditionsDuration),
 				)

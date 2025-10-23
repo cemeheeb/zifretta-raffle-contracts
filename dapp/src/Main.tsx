@@ -7,7 +7,7 @@ import {TonConnectUIProvider} from "@tonconnect/ui-react";
 
 ReactDOM.createRoot(
   document.getElementById("root")!).render(
-  <TonConnectUIProvider manifestUrl="https://nft.zifretta.com/manifest.json">
+  <TonConnectUIProvider manifestUrl="https://raffles.zifretta.com/manifest.json">
     <WebAppProvider options={{
       smoothButtonsTransition: true,
     }}>

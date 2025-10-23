@@ -185,8 +185,8 @@ func (t *Tracker) invalidateConditions(status *storage.UserStatus) error {
 func (t *Tracker) sendSetConditions(raffleAccountID ton.AccountID, userAccountID ton.AccountID, whiteTicketMinted uint8, blackTicketPurchased uint8) error {
 
 	err := t.wallet.Send(t.ctx, blockchain.RaffleSetConditionMessage{
-		AttachedTon:          5_000_000_0, // 0.05 ton
-		RaffleAddress:        raffleAccountID,
+		Amount:               5_000_000_0, // 0.05 ton
+		Address:              raffleAccountID,
 		UserAddress:          userAccountID,
 		WhiteTicketMinted:    whiteTicketMinted,
 		BlackTicketPurchased: blackTicketPurchased,
