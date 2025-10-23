@@ -20,7 +20,7 @@ func NewSqliteStorage() *SqliteStorage {
 	logger.Debug("initializing database...")
 	db, err := gorm.Open(sqlite.Open("persistent.db"), &gorm.Config{})
 	if err != nil {
-		panic("failed to connect database")
+		panic(err)
 	}
 
 	err = db.AutoMigrate(
