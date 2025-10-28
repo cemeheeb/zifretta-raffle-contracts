@@ -19,13 +19,13 @@ func main() {
 
 	// Запускаем горутину с основным циклом
 	go func() {
-		logger.Initialize()
+		logger.Initialize(logger.Configuration{
+			LogFile:   "tracker.log",
+			ErrorFile: "errors.log",
+			Level:     "debug",
+			Console:   true,
+		})
 		trackerInstance := tracker.NewTracker(ctx)
-
-		//err := trackerInstance.VerifyRaffleAccount()
-		//if err != nil {
-		//	panic(err)
-		//}
 
 		raffleAccountData, err := trackerInstance.GetRaffleAccountData()
 		if err != nil {
