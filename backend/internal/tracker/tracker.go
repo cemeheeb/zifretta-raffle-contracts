@@ -96,7 +96,7 @@ func NewTracker(ctx context.Context) *Tracker {
 	}
 }
 
-func (t *Tracker) Run(raffleDeployedLt int64, minCandidateReachedLt int64, maxParticipantUnixTime int64) {
+func (t *Tracker) Run(raffleDeployedLt int64) {
 
 	log.Printf("\n\n GATHERING CANDIDATE REGISTRATIONS \n\n")
 

@@ -74,13 +74,6 @@ func (t *Tracker) synchronizePendingWhiteTicketMintedActions() error {
 			LastDeployedUnixTime:            userStatus.LastDeployedUnixTime,
 		}
 
-		err = t.storage.UpdateUserStatus(userStatusNext)
-
-		if err != nil {
-			logger.Debug("Cannot update user statuses, exiting...")
-			return err
-		}
-
 		err = t.invalidateConditions(userStatus, userStatusNext)
 		if err != nil {
 			logger.Debug("cannot invalidate conditions, exiting...")
@@ -127,12 +120,6 @@ func (t *Tracker) synchronizePendingBlackTicketPurchasedActions() error {
 			BlackTicketPurchasedProcessedLt: addressPendingActionMap[userStatus.UserAddress].TransactionLt,
 			ParticipantRegistrationLt:       userStatus.ParticipantRegistrationLt,
 			LastDeployedUnixTime:            userStatus.LastDeployedUnixTime,
-		}
-
-		err = t.storage.UpdateUserStatus(userStatus)
-		if err != nil {
-			logger.Debug("synchronize black ticket purchased: cannot update user statuses, exiting...")
-			return err
 		}
 
 		err := t.invalidateConditions(userStatus, userStatusNext)
@@ -183,10 +170,12 @@ func (t *Tracker) invalidateConditions(status *storage.UserStatus, statusNext *s
 		return err
 	}
 
-	logger.Debug(
+	logger.Info(
 		"invalidate conditions",
-		zap.Bool("status.WhiteTicketMinted != statusNext.WhiteTicketMinted", status.WhiteTicketMinted != statusNext.WhiteTicketMinted),
-		zap.Bool("status.BlackTicketPurchased != statusNext.BlackTicketPurchased", status.BlackTicketPurchased != statusNext.BlackTicketPurchased),
+		zap.Uint8("status.WhiteTicketMinted", status.WhiteTicketMinted),
+		zap.Uint8("status.BlackTicketPurchased", status.BlackTicketPurchased),
+		zap.Uint8("statusNext.WhiteTicketMinted", statusNext.WhiteTicketMinted),
+		zap.Uint8("statusNext.BlackTicketPurchased", statusNext.BlackTicketPurchased),
 	)
 
 	if status.WhiteTicketMinted < statusNext.WhiteTicketMinted || status.BlackTicketPurchased < statusNext.BlackTicketPurchased {

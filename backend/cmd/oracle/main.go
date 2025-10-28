@@ -27,11 +27,6 @@ func main() {
 		})
 		trackerInstance := tracker.NewTracker(ctx)
 
-		raffleAccountData, err := trackerInstance.GetRaffleAccountData()
-		if err != nil {
-			panic(err)
-		}
-
 		for {
 			select {
 			case <-ctx.Done():
@@ -39,9 +34,8 @@ func main() {
 				return
 			default:
 				trackerInstance.Run(
-					61946738000007, // ХАРДКОД LT от 26 сентября приблизительно с 20:00 по Мск
-					int64(raffleAccountData.MinCandidateReachedLt),
-					raffleAccountData.MinCandidateReachedUnixTime+int64(raffleAccountData.ConditionsDuration),
+					61882118000001,
+					// 61946738000007, // ХАРДКОД LT от 26 сентября приблизительно с 20:00 по Мск
 				)
 			}
 		}
