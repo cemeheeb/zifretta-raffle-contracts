@@ -114,9 +114,10 @@ func (t *Tracker) synchronizePendingBlackTicketPurchasedActions(maxBlackTicketMi
 	for _, userStatus := range userStatuses {
 		userStatusNext := &storage.UserStatus{
 			UserAddress:                     userStatus.UserAddress,
-			WhiteTicketMinted:               min(userStatus.BlackTicketPurchased+addressQuantityMap[userStatus.UserAddress], maxBlackTicketMinted),
-			WhiteTicketMintedProcessedLt:    userStatus.WhiteTicketMintedProcessedLt,
 			CandidateRegistrationLt:         userStatus.CandidateRegistrationLt,
+			WhiteTicketMinted:               userStatus.WhiteTicketMinted,
+			WhiteTicketMintedProcessedLt:    userStatus.WhiteTicketMintedProcessedLt,
+			BlackTicketPurchased:            min(userStatus.BlackTicketPurchased+addressQuantityMap[userStatus.UserAddress], maxBlackTicketMinted),
 			BlackTicketPurchasedProcessedLt: addressPendingActionMap[userStatus.UserAddress].TransactionLt,
 			ParticipantRegistrationLt:       userStatus.ParticipantRegistrationLt,
 			LastDeployedUnixTime:            userStatus.LastDeployedUnixTime,
