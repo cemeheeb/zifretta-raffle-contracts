@@ -22,10 +22,10 @@ func main() {
 		logger.Initialize()
 		trackerInstance := tracker.NewTracker(ctx)
 
-		err := trackerInstance.VerifyRaffleAccount()
-		if err != nil {
-			panic(err)
-		}
+		//err := trackerInstance.VerifyRaffleAccount()
+		//if err != nil {
+		//	panic(err)
+		//}
 
 		raffleAccountData, err := trackerInstance.GetRaffleAccountData()
 		if err != nil {

@@ -1,12 +1,15 @@
 package tracker
 
 import (
-	"backend/internal/blockchain"
 	"backend/internal/logger"
 	"backend/internal/storage"
 	"time"
 
+	"github.com/tonkeeper/tongo/boc"
+	"github.com/tonkeeper/tongo/tlb"
 	"github.com/tonkeeper/tongo/ton"
+	"github.com/tonkeeper/tongo/wallet"
+	"go.uber.org/zap"
 )
 
 func (t *Tracker) synchronizePendingCandidateRegistrationActions() error {
@@ -61,16 +64,24 @@ func (t *Tracker) synchronizePendingWhiteTicketMintedActions() error {
 	}
 
 	for _, userStatus := range userStatuses {
-		userStatus.WhiteTicketMinted = min(userStatus.WhiteTicketMinted+addressQuantityMap[userStatus.UserAddress], 2)
-		userStatus.WhiteTicketMintedProcessedLt = addressPendingActionMap[userStatus.UserAddress].TransactionLt
+		userStatusNext := &storage.UserStatus{
+			UserAddress:                     userStatus.UserAddress,
+			WhiteTicketMinted:               min(userStatus.WhiteTicketMinted+addressQuantityMap[userStatus.UserAddress], 2),
+			WhiteTicketMintedProcessedLt:    addressPendingActionMap[userStatus.UserAddress].TransactionLt,
+			CandidateRegistrationLt:         userStatus.CandidateRegistrationLt,
+			BlackTicketPurchasedProcessedLt: userStatus.BlackTicketPurchasedProcessedLt,
+			ParticipantRegistrationLt:       userStatus.ParticipantRegistrationLt,
+			LastDeployedUnixTime:            userStatus.LastDeployedUnixTime,
+		}
 
-		err = t.storage.UpdateUserStatus(userStatus)
+		err = t.storage.UpdateUserStatus(userStatusNext)
+
 		if err != nil {
 			logger.Debug("Cannot update user statuses, exiting...")
 			return err
 		}
 
-		err := t.invalidateConditions(userStatus)
+		err = t.invalidateConditions(userStatus, userStatusNext)
 		if err != nil {
 			logger.Debug("cannot invalidate conditions, exiting...")
 			return err
@@ -108,8 +119,15 @@ func (t *Tracker) synchronizePendingBlackTicketPurchasedActions() error {
 	}
 
 	for _, userStatus := range userStatuses {
-		userStatus.BlackTicketPurchased = min(userStatus.BlackTicketPurchased+addressQuantityMap[userStatus.UserAddress], 2)
-		userStatus.BlackTicketPurchasedProcessedLt = addressPendingActionMap[userStatus.UserAddress].TransactionLt
+		userStatusNext := &storage.UserStatus{
+			UserAddress:                     userStatus.UserAddress,
+			WhiteTicketMinted:               min(userStatus.BlackTicketPurchased+addressQuantityMap[userStatus.UserAddress], 2),
+			WhiteTicketMintedProcessedLt:    userStatus.WhiteTicketMintedProcessedLt,
+			CandidateRegistrationLt:         userStatus.CandidateRegistrationLt,
+			BlackTicketPurchasedProcessedLt: addressPendingActionMap[userStatus.UserAddress].TransactionLt,
+			ParticipantRegistrationLt:       userStatus.ParticipantRegistrationLt,
+			LastDeployedUnixTime:            userStatus.LastDeployedUnixTime,
+		}
 
 		err = t.storage.UpdateUserStatus(userStatus)
 		if err != nil {
@@ -117,7 +135,7 @@ func (t *Tracker) synchronizePendingBlackTicketPurchasedActions() error {
 			return err
 		}
 
-		err := t.invalidateConditions(userStatus)
+		err := t.invalidateConditions(userStatus, userStatusNext)
 		if err != nil {
 			logger.Debug("synchronize black ticket purchased: cannot invalidate conditions, exiting...")
 			return err
@@ -151,7 +169,7 @@ func (t *Tracker) synchronizePendingParticipantRegistrationActions() error {
 	return nil
 }
 
-func (t *Tracker) invalidateConditions(status *storage.UserStatus) error {
+func (t *Tracker) invalidateConditions(status *storage.UserStatus, statusNext *storage.UserStatus) error {
 
 	raffleAccountID, err := ton.ParseAccountID(t.raffleAddress)
 	if err != nil {
@@ -165,14 +183,21 @@ func (t *Tracker) invalidateConditions(status *storage.UserStatus) error {
 		return err
 	}
 
-	if status.WhiteTicketMinted == 2 && status.BlackTicketPurchased == 2 && ((status.LastDeployedUnixTime + GlobalDeployedTimeout) < time.Now().Unix()) {
+	logger.Debug(
+		"invalidate conditions",
+		zap.Bool("status.WhiteTicketMinted != statusNext.WhiteTicketMinted", status.WhiteTicketMinted != statusNext.WhiteTicketMinted),
+		zap.Bool("status.BlackTicketPurchased != statusNext.BlackTicketPurchased", status.BlackTicketPurchased != statusNext.BlackTicketPurchased),
+	)
+
+	if status.WhiteTicketMinted < statusNext.WhiteTicketMinted || status.BlackTicketPurchased < statusNext.BlackTicketPurchased {
 		err := t.sendSetConditions(raffleAccountID, userAccountID, status.WhiteTicketMinted, status.BlackTicketPurchased)
 		if err != nil {
 			logger.Debug("invalidate conditions: cannot send set conditions to blockchain, exiting...")
 			return err
 		}
+
 		status.LastDeployedUnixTime = time.Now().Unix()
-		err = t.storage.UpdateUserStatus(status)
+		err = t.storage.UpdateUserStatus(statusNext)
 		if err != nil {
 			logger.Debug("invalidate conditions: cannot update user status, exiting...")
 			return err
@@ -183,14 +208,40 @@ func (t *Tracker) invalidateConditions(status *storage.UserStatus) error {
 }
 
 func (t *Tracker) sendSetConditions(raffleAccountID ton.AccountID, userAccountID ton.AccountID, whiteTicketMinted uint8, blackTicketPurchased uint8) error {
+	logger.Debug("sending setting conditions to blockchain...")
 
-	err := t.wallet.Send(t.ctx, blockchain.RaffleSetConditionMessage{
-		Amount:               5_000_000_0, // 0.05 ton
-		Address:              raffleAccountID,
-		UserAddress:          userAccountID,
-		WhiteTicketMinted:    whiteTicketMinted,
-		BlackTicketPurchased: blackTicketPurchased,
-	})
+	cell := boc.NewCell()
+
+	if err := cell.WriteUint(0x13370011, 32); err != nil {
+
+		return err
+	}
+
+	if err := tlb.Marshal(cell, userAccountID.ToMsgAddress()); err != nil {
+		return err
+	}
+
+	if err := cell.WriteUint(uint64(whiteTicketMinted), 8); err != nil {
+		return err
+	}
+
+	if err := cell.WriteUint(uint64(blackTicketPurchased), 8); err != nil {
+		return err
+	}
+
+	if err := cell.WriteUint(0, 240); err != nil {
+		return err
+	}
+
+	message := wallet.Message{
+		Amount:  5_000_000_0,
+		Address: raffleAccountID,
+		Bounce:  true,
+		Mode:    wallet.DefaultMessageMode,
+		Body:    cell,
+	}
+
+	_, err := t.wallet.SendV2(t.ctx, 60*time.Second, message)
 
 	if err != nil {
 		return err

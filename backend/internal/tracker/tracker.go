@@ -11,6 +11,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/tonkeeper/tonapi-go"
+	"github.com/tonkeeper/tongo/liteapi"
 	"github.com/tonkeeper/tongo/wallet"
 	"go.uber.org/zap"
 )
@@ -57,12 +58,17 @@ func NewTracker(ctx context.Context) *Tracker {
 	sqliteStorage := storage.NewSqliteStorage()
 
 	logger.Debug("tracker initialization: tonapi client...\n")
-	client, err := tonapi.NewClient(tonapi.TonApiURL, &tonapi.Security{})
+	client, err := tonapi.NewClient(tonapi.TonApiURL, tonapi.WithToken("AF64UYO7BZZBSYIAAAAGMH67OZFW62PFAP6HGNCLST5YRXESM6FBPBYPEVZDGI3RDCSEUYY"))
 	if err != nil {
 		panic(err)
 	}
 
 	logger.Debug("tracker initialization:  wallet...\n")
+	clientLite, err := liteapi.NewClientWithDefaultMainnet()
+	if err != nil {
+		panic(err)
+	}
+
 	pk, err := wallet.SeedToPrivateKey(walletMnemonic)
 	if err != nil {
 		panic(err)
@@ -72,7 +78,7 @@ func NewTracker(ctx context.Context) *Tracker {
 	version := WalletMap[walletVersion]
 
 	logger.Debug("tracker initialization: wallet info", zap.String("version", walletVersion), zap.Int("version index", version), zap.Bool("private key is empty", pk == nil))
-	oracleWallet, err := wallet.New(pk, wallet.Version(version), client)
+	oracleWallet, err := wallet.New(pk, wallet.Version(version), clientLite)
 
 	if err != nil {
 		panic(err)

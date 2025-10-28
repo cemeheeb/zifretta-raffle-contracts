@@ -75,19 +75,16 @@ func (t *Tracker) collectCandidateRegistrationActions(raffleAddress string, raff
 				transactionHash, processedUserAddress, processedCandidateAddress, ok := processRaffleCandidateRegistrationTrace(inner)
 
 				if ok && transactionLt > lastCandidateRegistrationLt {
-					logger.Info("raffle candidate registration: append action",
-						zap.String("user address", processedUserAddress),
-						zap.String("ticket address", processedUserAddress),
-					)
-
-					actions = append(actions, &storage.UserAction{
-						ActionType:          storage.CandidateRegistrationActionType,
-						UserAddress:         processedUserAddress,
-						Address:             processedCandidateAddress,
-						TransactionLt:       transactionLt,
-						TransactionHash:     transactionHash,
-						TransactionUnixTime: transactionUnixTime,
-					})
+					if processedUserAddress != "EQAaJxp_6o9qhMj_wjfZG5EBr8DSj_Lx6hnMqkYf1BLSq0JA" {
+						actions = append(actions, &storage.UserAction{
+							ActionType:          storage.CandidateRegistrationActionType,
+							UserAddress:         processedUserAddress,
+							Address:             processedCandidateAddress,
+							TransactionLt:       transactionLt,
+							TransactionHash:     transactionHash,
+							TransactionUnixTime: transactionUnixTime,
+						})
+					}
 				} else {
 					logger.Debug("raffle candidate registration: trace cannot be processed, skip")
 				}
