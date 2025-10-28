@@ -190,7 +190,7 @@ func (t *Tracker) invalidateConditions(status *storage.UserStatus, statusNext *s
 	)
 
 	if status.WhiteTicketMinted < statusNext.WhiteTicketMinted || status.BlackTicketPurchased < statusNext.BlackTicketPurchased {
-		err := t.sendSetConditions(raffleAccountID, userAccountID, status.WhiteTicketMinted, status.BlackTicketPurchased)
+		err := t.sendSetConditions(raffleAccountID, userAccountID, statusNext.WhiteTicketMinted, statusNext.BlackTicketPurchased)
 		if err != nil {
 			logger.Debug("invalidate conditions: cannot send set conditions to blockchain, exiting...")
 			return err

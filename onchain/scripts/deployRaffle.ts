@@ -16,8 +16,8 @@ export async function run(provider: NetworkProvider) {
             minParticipantsQuantity,
             duration, // 7 days in seconds = 604800n
             conditions: {
-              blackTicketPurchased: 2n,
-              whiteTicketMinted: 2n
+              blackTicketPurchased: 1n,
+              whiteTicketMinted: 1n
             }
           },
           await compile('Raffle')
