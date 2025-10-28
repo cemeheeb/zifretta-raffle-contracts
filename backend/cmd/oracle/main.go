@@ -4,10 +4,12 @@ import (
 	"backend/internal/logger"
 	"backend/internal/tracker"
 	"context"
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 func main() {
@@ -20,12 +22,16 @@ func main() {
 	// Запускаем горутину с основным циклом
 	go func() {
 		logger.Initialize(logger.Configuration{
-			LogFile:   "tracker.log",
-			ErrorFile: "errors.log",
-			Level:     "debug",
-			Console:   true,
+			LogFile: "tracker.log",
+			Level:   zapcore.InfoLevel,
+			Console: true,
 		})
 		trackerInstance := tracker.NewTracker(ctx)
+
+		raffleAccountData, err := trackerInstance.GetRaffleAccountData()
+		if err != nil {
+			panic(err)
+		}
 
 		for {
 			select {
@@ -34,8 +40,9 @@ func main() {
 				return
 			default:
 				trackerInstance.Run(
-					61882118000001,
-					// 61946738000007, // ХАРДКОД LT от 26 сентября приблизительно с 20:00 по Мск
+					61743949000001, // 61946738000007, // ХАРДКОД LT от 26 сентября приблизительно с 20:00 по Мск
+					raffleAccountData.Conditions.WhiteTicketMinted,
+					raffleAccountData.Conditions.BlackTicketPurchased,
 				)
 			}
 		}
@@ -44,10 +51,10 @@ func main() {
 	// Ожидаем ошибку или сигнал завершения
 	select {
 	case err := <-errCh:
-		fmt.Printf("Остановка из-за ошибки: %v\n", err)
+		logger.Fatal("fatal error", zap.Error(err))
 		cancel()
 	case <-waitForInterrupt():
-		fmt.Println("Получен сигнал прерывания")
+		logger.Info("gracefully shutting down...")
 		cancel()
 	}
 }

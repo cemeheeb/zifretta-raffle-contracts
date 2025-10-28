@@ -36,7 +36,7 @@ func (t *Tracker) synchronizePendingCandidateRegistrationActions() error {
 	return nil
 }
 
-func (t *Tracker) synchronizePendingWhiteTicketMintedActions() error {
+func (t *Tracker) synchronizePendingWhiteTicketMintedActions(maxWhiteTicketMinted uint8) error {
 	pendingActions, err := t.storage.GetPendingWhiteTicketMintedActions()
 	if err != nil {
 		logger.Debug("cannot get pending white ticket minted actions, exiting...")
@@ -66,7 +66,7 @@ func (t *Tracker) synchronizePendingWhiteTicketMintedActions() error {
 	for _, userStatus := range userStatuses {
 		userStatusNext := &storage.UserStatus{
 			UserAddress:                     userStatus.UserAddress,
-			WhiteTicketMinted:               min(userStatus.WhiteTicketMinted+addressQuantityMap[userStatus.UserAddress], 2),
+			WhiteTicketMinted:               min(userStatus.WhiteTicketMinted+addressQuantityMap[userStatus.UserAddress], maxWhiteTicketMinted),
 			WhiteTicketMintedProcessedLt:    addressPendingActionMap[userStatus.UserAddress].TransactionLt,
 			CandidateRegistrationLt:         userStatus.CandidateRegistrationLt,
 			BlackTicketPurchasedProcessedLt: userStatus.BlackTicketPurchasedProcessedLt,
@@ -84,7 +84,7 @@ func (t *Tracker) synchronizePendingWhiteTicketMintedActions() error {
 	return nil
 }
 
-func (t *Tracker) synchronizePendingBlackTicketPurchasedActions() error {
+func (t *Tracker) synchronizePendingBlackTicketPurchasedActions(maxBlackTicketMinted uint8) error {
 	pendingActions, err := t.storage.GetPendingBlackTicketPurchasedActions()
 	if err != nil {
 		logger.Debug("cannot get pending black ticket purchased actions, exiting...")
@@ -114,7 +114,7 @@ func (t *Tracker) synchronizePendingBlackTicketPurchasedActions() error {
 	for _, userStatus := range userStatuses {
 		userStatusNext := &storage.UserStatus{
 			UserAddress:                     userStatus.UserAddress,
-			WhiteTicketMinted:               min(userStatus.BlackTicketPurchased+addressQuantityMap[userStatus.UserAddress], 2),
+			WhiteTicketMinted:               min(userStatus.BlackTicketPurchased+addressQuantityMap[userStatus.UserAddress], maxBlackTicketMinted),
 			WhiteTicketMintedProcessedLt:    userStatus.WhiteTicketMintedProcessedLt,
 			CandidateRegistrationLt:         userStatus.CandidateRegistrationLt,
 			BlackTicketPurchasedProcessedLt: addressPendingActionMap[userStatus.UserAddress].TransactionLt,
@@ -170,19 +170,24 @@ func (t *Tracker) invalidateConditions(status *storage.UserStatus, statusNext *s
 		return err
 	}
 
-	logger.Info(
-		"invalidate conditions",
-		zap.Uint8("status.WhiteTicketMinted", status.WhiteTicketMinted),
-		zap.Uint8("status.BlackTicketPurchased", status.BlackTicketPurchased),
-		zap.Uint8("statusNext.WhiteTicketMinted", statusNext.WhiteTicketMinted),
-		zap.Uint8("statusNext.BlackTicketPurchased", statusNext.BlackTicketPurchased),
-	)
-
 	if status.WhiteTicketMinted < statusNext.WhiteTicketMinted || status.BlackTicketPurchased < statusNext.BlackTicketPurchased {
-		err := t.sendSetConditions(raffleAccountID, userAccountID, statusNext.WhiteTicketMinted, statusNext.BlackTicketPurchased)
-		if err != nil {
-			logger.Debug("invalidate conditions: cannot send set conditions to blockchain, exiting...")
-			return err
+
+		logger.Info(
+			"set candidate conditions",
+			zap.Uint8("status.WhiteTicketMinted", status.WhiteTicketMinted),
+			zap.Uint8("statusNext.WhiteTicketMinted", statusNext.WhiteTicketMinted),
+			zap.Uint8("status.BlackTicketPurchased", status.BlackTicketPurchased),
+			zap.Uint8("statusNext.BlackTicketPurchased", statusNext.BlackTicketPurchased),
+		)
+
+		for i := 0; i < 5; i++ {
+			err := t.sendSetConditions(raffleAccountID, userAccountID, statusNext.WhiteTicketMinted, statusNext.BlackTicketPurchased)
+
+			if err == nil {
+				break
+			}
+
+			logger.Warn("invalidate conditions: cannot send set conditions to blockchain, retrying...")
 		}
 
 		status.LastDeployedUnixTime = time.Now().Unix()
@@ -239,7 +244,7 @@ func (t *Tracker) sendSetConditions(raffleAccountID ton.AccountID, userAccountID
 	return nil
 }
 
-func (t *Tracker) synchronize() error {
+func (t *Tracker) synchronize(maxWhiteTicketMinted uint8, maxBlackTicketMinted uint8) error {
 
 	err := t.synchronizePendingCandidateRegistrationActions()
 	if err != nil {
@@ -251,12 +256,12 @@ func (t *Tracker) synchronize() error {
 		return err
 	}
 
-	err = t.synchronizePendingWhiteTicketMintedActions()
+	err = t.synchronizePendingWhiteTicketMintedActions(maxWhiteTicketMinted)
 	if err != nil {
 		return err
 	}
 
-	err = t.synchronizePendingBlackTicketPurchasedActions()
+	err = t.synchronizePendingBlackTicketPurchasedActions(maxBlackTicketMinted)
 	if err != nil {
 		return err
 	}

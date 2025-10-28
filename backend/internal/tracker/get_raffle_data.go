@@ -120,8 +120,8 @@ func (t *Tracker) GetRaffleAccountData() (*RaffleAccountData, error) {
 		MinCandidateQuantity: uint32(minCandidateQuantity),
 		ConditionsDuration:   uint32(conditionsDuration),
 		Conditions: RaffleConditions{
-			BlackTicketPurchased: uint8(blackTicketPurchased),
 			WhiteTicketMinted:    uint8(whiteTicketMinted),
+			BlackTicketPurchased: uint8(blackTicketPurchased),
 		},
 		MinCandidateReachedLt:       uint64(minCandidateReachedLt),
 		MinCandidateReachedUnixTime: int64(minCandidateReachedUnixTime),

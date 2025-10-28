@@ -58,6 +58,9 @@ func (s *SqliteStorage) UpdateUserActions(actions []*UserAction) error {
 		return nil
 	}
 
+	actionAddresses := mapToStrings(actions, func(action *UserAction) string { return action.UserAddress })
+	logger.Info("found new pending user actions", zap.Strings("actions", actionAddresses))
+
 	err := s.db.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "action_type"}, {Name: "user_address"}, {Name: "address"}},
 		DoUpdates: clause.AssignmentColumns([]string{"transaction_lt", "transaction_hash"}),
@@ -166,7 +169,6 @@ func (s *SqliteStorage) GetPendingParticipantRegistrationActions() ([]*UserActio
 	rows, err := s.db.Raw(`
 		select a.*
 		from user_actions a
-			left join user_statuses s on s.user_address = a.user_address
 		where a.action_type = ?
 	`, ParticipantRegistrationActionType).Rows()
 	if err != nil {
@@ -242,7 +244,7 @@ func (s *SqliteStorage) GetPendingBlackTicketPurchasedActions() ([]*UserAction, 
 		from user_actions a
 			left join user_statuses s on s.user_address = a.user_address
 		where a.action_type = ?
-		  and (s.black_ticket_purchased_processed_lt > a.transaction_lt or s.black_ticket_purchased_processed_lt = 0)
+		  and (s.black_ticket_purchased_processed_lt < a.transaction_lt or s.black_ticket_purchased_processed_lt = 0)
 	`, BlackTicketPurchasedActionType).Rows()
 
 	if err != nil {
@@ -341,4 +343,12 @@ func (s *SqliteStorage) UpdateUserStatuses(userStatuses []*UserStatus) error {
 
 	logger.Debug("update user statuses... done")
 	return nil
+}
+
+func mapToStrings[T any](slice []T, extract func(T) string) []string {
+	result := make([]string, len(slice))
+	for i, item := range slice {
+		result[i] = extract(item)
+	}
+	return result
 }

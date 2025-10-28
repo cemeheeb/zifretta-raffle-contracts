@@ -96,35 +96,35 @@ func NewTracker(ctx context.Context) *Tracker {
 	}
 }
 
-func (t *Tracker) Run(raffleDeployedLt int64) {
+func (t *Tracker) Run(raffleDeployedLt int64, targetWhiteTicketMinted uint8, targetBlackTicketMinted uint8) {
 
-	log.Printf("\n\n GATHERING CANDIDATE REGISTRATIONS \n\n")
+	logger.Debug("\n\n GATHERING CANDIDATE REGISTRATIONS \n\n")
 
 	err := t.collectCandidateRegistrationActions(t.raffleAddress, raffleDeployedLt)
 	if err != nil {
 		panic(err)
 	}
 
-	log.Printf("\n\n GATHERING WHITE TICKET MINTED \n\n")
+	logger.Debug("\n\n GATHERING WHITE TICKET MINTED \n\n")
 	err = t.collectWhiteTicketMintedActions(raffleDeployedLt)
 	if err != nil {
 		panic(err)
 	}
 
-	log.Printf("\n\n GATHERING BLACK TICKET PURCHASES \n\n")
+	logger.Debug("\n\n GATHERING BLACK TICKET PURCHASES \n\n")
 	err = t.collectBlackTicketPurchasedActions(raffleDeployedLt)
 	if err != nil {
 		panic(err)
 	}
 
-	log.Printf("\n\n GATHERING PARTICIPANT REGISTRATIONS \n\n")
+	logger.Debug("\n\n GATHERING PARTICIPANT REGISTRATIONS \n\n")
 	err = t.collectParticipantRegistrationActions(t.raffleAddress, raffleDeployedLt)
 	if err != nil {
 		panic(err)
 	}
 
-	log.Printf("\n\n BLOCKCHAIN SYNCHRONIZATION \n\n")
-	err = t.synchronize()
+	logger.Debug("\n\n BLOCKCHAIN SYNCHRONIZATION \n\n")
+	err = t.synchronize(targetWhiteTicketMinted, targetBlackTicketMinted)
 	if err != nil {
 		panic(err)
 	}
