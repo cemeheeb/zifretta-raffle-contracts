@@ -132,7 +132,7 @@ func (t *Tracker) collectWhiteTicketMintedActions(raffleDeployedLt int64) error 
 	return nil
 }
 
-func walkTracesWhiteTicketMinted(trace *tonapi.Trace, callback func(*tonapi.Trace, bool), hasNFTMintOpCode bool, lastWhiteTicketMintedAt, raffleStartedAt int64) int64 {
+func walkTracesWhiteTicketMinted(trace *tonapi.Trace, callback func(*tonapi.Trace, bool), hasNFTMintOpCode bool, lastWhiteTicketMintedAt int64, raffleDeployedAt int64) int64 {
 	if trace == nil {
 		logger.Debug("no trace found, stop walk")
 		return math.MaxInt64
@@ -153,10 +153,10 @@ func walkTracesWhiteTicketMinted(trace *tonapi.Trace, callback func(*tonapi.Trac
 
 	beforeLt := trace.Transaction.Lt
 	for i := range trace.Children {
-		if beforeLt < raffleStartedAt || beforeLt < lastWhiteTicketMintedAt {
+		if beforeLt < raffleDeployedAt || beforeLt < lastWhiteTicketMintedAt {
 			break
 		}
-		beforeLt = min(beforeLt, walkTracesWhiteTicketMinted(&trace.Children[i], callback, hasNFTMintOpCode, lastWhiteTicketMintedAt, raffleStartedAt))
+		beforeLt = min(beforeLt, walkTracesWhiteTicketMinted(&trace.Children[i], callback, hasNFTMintOpCode, lastWhiteTicketMintedAt, raffleDeployedAt))
 	}
 
 	logger.Debug("walk through white ticket minted actions... done", zap.String("hash", trace.Transaction.GetHash()))

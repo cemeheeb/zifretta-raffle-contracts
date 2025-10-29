@@ -15,7 +15,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (t *Tracker) collectActionsBlackTicketPurchasedInternal(userAddress string, lastUserBlackTicketPurchasedLt int64, raffleDeployedLt int64) ([]*storage.UserAction, error) {
+func (t *Tracker) collectActionsBlackTicketPurchasedInternal(userAddress string, lastBlackTicketPurchasedLt int64, raffleDeployedLt int64) ([]*storage.UserAction, error) {
 	logger.Debug("black ticket purchased: processing collect actions")
 	var actions = make([]*storage.UserAction, 0)
 
@@ -67,7 +67,7 @@ func (t *Tracker) collectActionsBlackTicketPurchasedInternal(userAddress string,
 			transactionUnixTime = trace.Transaction.Utime
 			maxTransactionLt = max(maxTransactionLt, transactionLt)
 
-			if transactionLt <= lastUserBlackTicketPurchasedLt {
+			if transactionLt <= lastBlackTicketPurchasedLt {
 				logger.Debug("black ticket purchased: last transaction logic time reached")
 				break
 			}
@@ -77,7 +77,7 @@ func (t *Tracker) collectActionsBlackTicketPurchasedInternal(userAddress string,
 				transactionUnixTime = inner.Transaction.Utime
 				transactionHash, processedUserAddress, processedTicketAddress, ok := t.processBlackTicketPurchasedTrace(inner, &blackTicketCollectionAccountID)
 
-				if ok && transactionLt > lastUserBlackTicketPurchasedLt {
+				if ok && transactionLt > lastBlackTicketPurchasedLt {
 					logger.Debug("black ticket purchased: append action", zap.String("user address", processedUserAddress), zap.String("ticket address", processedTicketAddress))
 
 					actions = append(actions, &storage.UserAction{
@@ -91,7 +91,7 @@ func (t *Tracker) collectActionsBlackTicketPurchasedInternal(userAddress string,
 				} else {
 					logger.Debug("black ticket purchased: no need to process, skip")
 				}
-			}, lastUserBlackTicketPurchasedLt, raffleDeployedLt)
+			}, lastBlackTicketPurchasedLt, raffleDeployedLt)
 
 			if beforeLt < raffleDeployedLt {
 				logger.Debug("raffle candidate registration: raffle start time reached, finalize traces results...")
@@ -101,7 +101,7 @@ func (t *Tracker) collectActionsBlackTicketPurchasedInternal(userAddress string,
 			logger.Debug("black ticket purchased: process user account trace... iteration done")
 		}
 
-		if len(accountTracesResult.GetTraces()) < GlobalLimitWindowSize || beforeLt < raffleDeployedLt || transactionLt <= lastUserBlackTicketPurchasedLt {
+		if len(accountTracesResult.GetTraces()) < GlobalLimitWindowSize || beforeLt < raffleDeployedLt || transactionLt <= lastBlackTicketPurchasedLt {
 			logger.Debug("black ticket purchased: out of trace, finalize traces results...")
 			break
 		}
@@ -109,7 +109,7 @@ func (t *Tracker) collectActionsBlackTicketPurchasedInternal(userAddress string,
 		logger.Debug("black ticket purchased: collect user account traces... iteration done")
 	}
 
-	if maxTransactionLt > lastUserBlackTicketPurchasedLt {
+	if maxTransactionLt > lastBlackTicketPurchasedLt {
 		pendingUserActionTouch := &storage.UserActionTouch{
 			ActionType:    storage.BlackTicketPurchasedActionType,
 			UserAddress:   userAddress,
@@ -137,13 +137,13 @@ func (t *Tracker) collectBlackTicketPurchasedActions(raffleDeployedAt int64) err
 
 	for _, candidateAddressAction := range candidateAddressesActions {
 		logger.Debug("get latest black ticket purchased at")
-		lastUserBlackTicketPurchasedAt, err := t.storage.GetUserActionTouchByAddress(storage.BlackTicketPurchasedActionType, candidateAddressAction.UserAddress)
+		lastBlackTicketPurchasedAt, err := t.storage.GetUserActionTouchByAddress(storage.BlackTicketPurchasedActionType, candidateAddressAction.UserAddress)
 		if err != nil {
 			logger.Fatal("failed to get last black ticket purchased at", zap.Error(err))
 			panic(err)
 		}
 
-		pendingActions, err := t.collectActionsBlackTicketPurchasedInternal(candidateAddressAction.UserAddress, lastUserBlackTicketPurchasedAt, raffleDeployedAt)
+		pendingActions, err := t.collectActionsBlackTicketPurchasedInternal(candidateAddressAction.UserAddress, lastBlackTicketPurchasedAt, raffleDeployedAt)
 		if err != nil {
 			logger.Fatal("black ticket purchased at", zap.Error(err))
 			return err
@@ -177,7 +177,7 @@ func walkTracesBlackTicketPurchased(trace *tonapi.Trace, callback func(*tonapi.T
 			break
 		}
 
-		transactionLt = min(transactionLt, walkTracesBlackTicketPurchased(&trace.Children[i], callback, lastBlackTicketPurchasedAt, transactionLt))
+		transactionLt = min(transactionLt, walkTracesBlackTicketPurchased(&trace.Children[i], callback, lastBlackTicketPurchasedAt, raffleDeployedAt))
 	}
 
 	return transactionLt
@@ -217,26 +217,45 @@ func (t *Tracker) processBlackTicketPurchasedTrace(trace *tonapi.Trace, blackTic
 		return "", "", "", false
 	}
 
-	if !slices.Contains(sourceAccount.GetMethods, "get_sale_data") {
+	if !slices.Contains(sourceAccount.GetMethods, "get_sale_data") && !slices.Contains(sourceAccount.GetMethods, "get_fix_price_data_v4") {
 		logger.Debug("black ticket purchased: account contract does not provide sale data method... skip")
 		return "", "", "", false
 	}
 
-	saleDataResult, err := infinityRateLimitRetry(
-		func() (*tonapi.MethodExecutionResult, error) {
-			return t.client.ExecGetMethodForBlockchainAccount(t.ctx, tonapi.ExecGetMethodForBlockchainAccountParams{AccountID: sourceAccount.Address, MethodName: "get_sale_data"})
-		},
-	)
+	var saleDataResult *tonapi.MethodExecutionResult
+	if slices.Contains(sourceAccount.GetMethods, "get_sale_data") {
+		saleDataResult, err = infinityRateLimitRetry(
+			func() (*tonapi.MethodExecutionResult, error) {
+				return t.client.ExecGetMethodForBlockchainAccount(t.ctx, tonapi.ExecGetMethodForBlockchainAccountParams{AccountID: sourceAccount.Address, MethodName: "get_sale_data"})
+			},
+		)
+	} else if slices.Contains(sourceAccount.GetMethods, "get_fix_price_data_v4") {
+		saleDataResult, err = infinityRateLimitRetry(
+			func() (*tonapi.MethodExecutionResult, error) {
+				return t.client.ExecGetMethodForBlockchainAccount(t.ctx, tonapi.ExecGetMethodForBlockchainAccountParams{AccountID: sourceAccount.Address, MethodName: "get_fix_price_data_v4"})
+			},
+		)
+	}
+
 	if err != nil {
 		logger.Debug("black ticket purchased: cannot execute get_sale_data method... skip")
 		return "", "", "", false
 	}
 
 	// marketplace address
-	saleDataMarketplaceAddressCellString, ok := saleDataResult.GetStack()[3].GetCell().Get()
-	if !ok {
-		logger.Debug("black ticket purchased: invalid GetGems get_sale_data output... skip")
-		return "", "", "", false
+	var saleDataMarketplaceAddressCellString string
+	if slices.Contains(sourceAccount.GetMethods, "get_sale_data") {
+		saleDataMarketplaceAddressCellString, ok = saleDataResult.GetStack()[3].GetCell().Get()
+		if !ok {
+			logger.Debug("black ticket purchased: invalid GetGems get_sale_data output... skip")
+			return "", "", "", false
+		}
+	} else if slices.Contains(sourceAccount.GetMethods, "get_fix_price_data_v4") {
+		saleDataMarketplaceAddressCellString, ok = saleDataResult.GetStack()[2].GetCell().Get()
+		if !ok {
+			logger.Debug("black ticket purchased: invalid GetGems get_sale_data output... skip")
+			return "", "", "", false
+		}
 	}
 
 	saleDataMarketplaceAddressCell, err := boc.DeserializeBocHex(saleDataMarketplaceAddressCellString)
@@ -264,7 +283,13 @@ func (t *Tracker) processBlackTicketPurchasedTrace(trace *tonapi.Trace, blackTic
 	}
 
 	// owner address
-	saleDataOwnerAddressCellOpt := saleDataResult.GetStack()[5].GetCell()
+	var saleDataOwnerAddressCellOpt tonapi.OptString
+	if slices.Contains(sourceAccount.GetMethods, "get_sale_data") {
+		saleDataOwnerAddressCellOpt = saleDataResult.GetStack()[5].GetCell()
+	} else if slices.Contains(sourceAccount.GetMethods, "get_fix_price_data_v4") {
+		saleDataOwnerAddressCellOpt = saleDataResult.GetStack()[4].GetCell()
+	}
+
 	saleDataOwnerAddressCellString, ok := saleDataOwnerAddressCellOpt.Get()
 	if !ok {
 		logger.Debug("black ticket purchased: invalid GetGems get_sale_data output... skip")

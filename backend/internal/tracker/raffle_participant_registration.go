@@ -129,7 +129,7 @@ func (t *Tracker) collectParticipantRegistrationActions(raffleAddress string, ra
 	return nil
 }
 
-func walkTracesParticipantRegistration(trace *tonapi.Trace, callback func(*tonapi.Trace), lastparticipantRegisteredAt int64, raffleStartedAt int64) int64 {
+func walkTracesParticipantRegistration(trace *tonapi.Trace, callback func(*tonapi.Trace), lastParticipantRegisteredAt int64, raffleDeployedAt int64) int64 {
 
 	if trace == nil {
 		return math.MaxInt64
@@ -137,15 +137,16 @@ func walkTracesParticipantRegistration(trace *tonapi.Trace, callback func(*tonap
 
 	callback(trace)
 
-	beforeLt := trace.Transaction.GetLt()
+	transactionLt := trace.Transaction.Lt
 	for i := range trace.Children {
-		if beforeLt < raffleStartedAt || beforeLt < lastparticipantRegisteredAt {
+		if transactionLt < raffleDeployedAt || transactionLt < lastParticipantRegisteredAt {
 			break
 		}
-		beforeLt = min(beforeLt, walkTracesParticipantRegistration(&trace.Children[i], callback, lastparticipantRegisteredAt, raffleStartedAt))
+
+		transactionLt = min(transactionLt, walkTracesParticipantRegistration(&trace.Children[i], callback, lastParticipantRegisteredAt, raffleDeployedAt))
 	}
 
-	return beforeLt
+	return transactionLt
 }
 
 func processRaffleParticipantRegistrationTrace(trace *tonapi.Trace) (string, string, string, bool) {
