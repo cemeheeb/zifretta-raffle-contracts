@@ -2,6 +2,7 @@ import {toNano} from '@ton/core';
 import {NetworkProvider} from '@ton/blueprint';
 
 import {Raffle} from '../wrappers/Raffle';
+import {promptAmount} from "../wrappers/ui-utils";
 
 export async function run(provider: NetworkProvider, args: string[]) {
   const ui = provider.ui();
@@ -13,11 +14,13 @@ export async function run(provider: NetworkProvider, args: string[]) {
     return;
   }
 
+  const amount = await promptAmount('Winning amount', ui);
+
   const raffle = provider.open(Raffle.createFromAddress(address));
 
   await raffle.sendRaffleNext(provider.sender(), {
-    value: toNano("0.3"),
-    forwardAmount: toNano("0.15"),
+    value: amount + toNano("0.05"),
+    forwardAmount: amount,
     message: "Congrats! You are winner!"
   });
 
