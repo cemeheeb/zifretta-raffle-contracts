@@ -40,7 +40,7 @@ func main() {
 				return
 			default:
 				trackerInstance.Run(
-					61743949000001, // 61946738000007, // ХАРДКОД LT от 26 сентября приблизительно с 20:00 по Мск
+					61946738000007, // ХАРДКОД LT от 26 сентября приблизительно с 20:00 по Мск
 					raffleAccountData.Conditions.WhiteTicketMinted,
 					raffleAccountData.Conditions.BlackTicketPurchased,
 				)
