@@ -39,8 +39,8 @@ export type RaffleData = {
 function raffleConditionConfigurationToBits256(configuration: RaffleConditions) {
 
   return beginCell()
-      .storeUint(configuration.blackTicketPurchased, 8)
       .storeUint(configuration.whiteTicketMinted, 8)
+      .storeUint(configuration.blackTicketPurchased, 8)
       .storeUint(0, 240) // fill zeroes remaining bits
       .asSlice()
       .loadBits(256);
