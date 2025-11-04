@@ -39,7 +39,8 @@ func main() {
 				trackerInstance.Finalize()
 				return
 			default:
-				trackerInstance.Run(
+				trackerInstance.Run( // 62867758000006
+					// 61948102000007
 					61946738000007, // ХАРДКОД LT от 26 сентября приблизительно с 20:00 по Мск
 					raffleAccountData.Conditions.WhiteTicketMinted,
 					raffleAccountData.Conditions.BlackTicketPurchased,

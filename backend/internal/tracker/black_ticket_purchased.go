@@ -24,6 +24,8 @@ func (t *Tracker) collectActionsBlackTicketPurchasedInternal(userAddress string,
 	var maxTransactionLt int64 = 0
 	var beforeLt int64 = 0
 
+	userAccountAddress, err := tongo.ParseAddress(userAddress)
+
 	blackTicketCollectionAccountID, err := ton.ParseAccountID(t.blackTicketCollectionAddress)
 	if err != nil {
 		logger.Fatal("black ticket purchased: collection address is invalid", zap.Error(err))
@@ -75,7 +77,7 @@ func (t *Tracker) collectActionsBlackTicketPurchasedInternal(userAddress string,
 			beforeLt = walkTracesBlackTicketPurchased(trace, func(inner *tonapi.Trace) {
 				transactionLt = inner.Transaction.Lt
 				transactionUnixTime = inner.Transaction.Utime
-				transactionHash, processedUserAddress, processedTicketAddress, ok := t.processBlackTicketPurchasedTrace(inner, &blackTicketCollectionAccountID)
+				transactionHash, processedUserAddress, processedTicketAddress, ok := t.processBlackTicketPurchasedTrace(inner, &blackTicketCollectionAccountID, &userAccountAddress.ID)
 
 				if ok && transactionLt > lastBlackTicketPurchasedLt {
 					logger.Debug("black ticket purchased: append action", zap.String("user address", processedUserAddress), zap.String("ticket address", processedTicketAddress))
@@ -109,11 +111,11 @@ func (t *Tracker) collectActionsBlackTicketPurchasedInternal(userAddress string,
 		logger.Debug("black ticket purchased: collect user account traces... iteration done")
 	}
 
-	if transactionLt > lastBlackTicketPurchasedLt {
+	if maxTransactionLt > lastBlackTicketPurchasedLt {
 		pendingUserActionTouch := &storage.UserActionTouch{
 			ActionType:    storage.BlackTicketPurchasedActionType,
 			UserAddress:   userAddress,
-			TransactionLt: transactionLt,
+			TransactionLt: maxTransactionLt,
 		}
 		err = t.storage.UpdateUserActionTouch(pendingUserActionTouch)
 		if err != nil {
@@ -183,7 +185,7 @@ func walkTracesBlackTicketPurchased(trace *tonapi.Trace, callback func(*tonapi.T
 	return transactionLt
 }
 
-func (t *Tracker) processBlackTicketPurchasedTrace(trace *tonapi.Trace, blackTicketCollectionAccountID *ton.AccountID) (string, string, string, bool) {
+func (t *Tracker) processBlackTicketPurchasedTrace(trace *tonapi.Trace, blackTicketCollectionAccountID *ton.AccountID, userAccountID *ton.AccountID) (string, string, string, bool) {
 	nftTransferOpCode := "0x5fcc3d14"
 
 	message, ok := trace.Transaction.GetInMsg().Get()
@@ -377,13 +379,13 @@ func (t *Tracker) processBlackTicketPurchasedTrace(trace *tonapi.Trace, blackTic
 		return "", "", "", false
 	}
 
-	userAccountID, err := tongo.AccountIDFromTlb(newOwnerAddress)
-	if userAccountID == nil || err != nil {
-		logger.Debug("black ticket purchased: invalid user account address... skip")
+	newOwnerUserAccountID, err := tongo.AccountIDFromTlb(newOwnerAddress)
+	if newOwnerUserAccountID == nil || err != nil || userAccountID.ToRaw() != newOwnerUserAccountID.ToRaw() {
+		logger.Debug("black ticket purchased: invalid new owner account address... skip")
 		return "", "", "", false
 	}
 
-	if saleDataOwnerAccountID.ToRaw() == userAccountID.ToRaw() {
+	if saleDataOwnerAccountID.ToRaw() == newOwnerUserAccountID.ToRaw() {
 		logger.Debug("black ticket purchased: it is not purchase, it is sale cancellation, skip")
 		return "", "", "", false
 	}
