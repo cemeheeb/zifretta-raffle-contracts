@@ -109,11 +109,11 @@ func (t *Tracker) collectActionsBlackTicketPurchasedInternal(userAddress string,
 		logger.Debug("black ticket purchased: collect user account traces... iteration done")
 	}
 
-	if maxTransactionLt > lastBlackTicketPurchasedLt {
+	if transactionLt > lastBlackTicketPurchasedLt {
 		pendingUserActionTouch := &storage.UserActionTouch{
 			ActionType:    storage.BlackTicketPurchasedActionType,
 			UserAddress:   userAddress,
-			TransactionLt: maxTransactionLt,
+			TransactionLt: transactionLt,
 		}
 		err = t.storage.UpdateUserActionTouch(pendingUserActionTouch)
 		if err != nil {
