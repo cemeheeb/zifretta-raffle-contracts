@@ -96,7 +96,7 @@ func (t *Tracker) collectParticipantRegistrationActions(raffleAddress string, ra
 			logger.Debug("raffle participant registration: collect trace details... iteration done")
 		}
 
-		if len(accountTracesResult.GetTraces()) < GlobalLimitWindowSize || beforeLt < raffleDeployedLt || transactionLt < lastParticipantRegistrationLt {
+		if len(accountTracesResult.GetTraces()) < GlobalLimitWindowSize || beforeLt < raffleDeployedLt || transactionLt <= lastParticipantRegistrationLt {
 			logger.Debug("raffle participant registration: exit condition reached, finalize traces results...")
 			break
 		}
