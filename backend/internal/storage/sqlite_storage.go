@@ -275,6 +275,16 @@ func (s *SqliteStorage) GetPendingBlackTicketPurchasedActions() ([]*UserAction, 
 	return actions, nil
 }
 
+func (s *SqliteStorage) GetUserStatusesByConditionsReached() ([]*UserStatus, error) {
+	var userStatuses []*UserStatus
+	tx := s.db.Where("white_ticket_minted = 1 and black_ticket_purchased = 1").Find(&userStatuses)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+
+	return userStatuses, nil
+}
+
 func (s *SqliteStorage) GetUserStatusByAddress(address string) (*UserStatus, error) {
 
 	var userStatus UserStatus
@@ -298,7 +308,7 @@ func (s *SqliteStorage) GetUserStatusesByAddresses(addresses []string) ([]*UserS
 }
 
 func (s *SqliteStorage) UpdateUserStatus(action *UserStatus) error {
-	logger.Debug("updating user status...")
+	logger.Debug("updating user status...", zap.String("userAddress", action.UserAddress))
 
 	tx := s.db.Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "user_address"}},

@@ -19,6 +19,7 @@ type Storage interface {
 	// user action
 	GetUserStatusByAddress(address string) (*UserStatus, error)
 	GetUserStatusesByAddresses(addresses []string) ([]*UserStatus, error)
+	GetUserStatusesByConditionsReached() ([]*UserStatus, error)
 	UpdateUserStatus(action *UserStatus) error
 	UpdateUserStatuses(action []*UserStatus) error
 }

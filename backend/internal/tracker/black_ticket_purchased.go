@@ -70,21 +70,21 @@ func (t *Tracker) collectActionsBlackTicketPurchasedInternal(userAddress string,
 			maxTransactionLt = max(maxTransactionLt, transactionLt)
 
 			if transactionLt <= lastBlackTicketPurchasedLt {
-				logger.Debug("black ticket purchased: last transaction logic time reached")
+				logger.Debug("black ticket purchased: last transaction logic time reached", zap.String("user address", userAddress))
 				break
 			}
 
 			beforeLt = walkTracesBlackTicketPurchased(trace, func(inner *tonapi.Trace) {
 				transactionLt = inner.Transaction.Lt
 				transactionUnixTime = inner.Transaction.Utime
-				transactionHash, processedUserAddress, processedTicketAddress, ok := t.processBlackTicketPurchasedTrace(inner, &blackTicketCollectionAccountID, &userAccountAddress.ID)
+				transactionHash, processedTicketAddress, ok := t.processBlackTicketPurchasedTrace(inner, &blackTicketCollectionAccountID, &userAccountAddress.ID)
 
 				if ok && transactionLt > lastBlackTicketPurchasedLt {
-					logger.Debug("black ticket purchased: append action", zap.String("user address", processedUserAddress), zap.String("ticket address", processedTicketAddress))
+					logger.Debug("black ticket purchased: append action", zap.String("user address", userAddress), zap.String("ticket address", processedTicketAddress))
 
 					actions = append(actions, &storage.UserAction{
 						ActionType:          storage.BlackTicketPurchasedActionType,
-						UserAddress:         processedUserAddress,
+						UserAddress:         userAddress,
 						Address:             processedTicketAddress,
 						TransactionLt:       transactionLt,
 						TransactionHash:     transactionHash,
@@ -137,7 +137,24 @@ func (t *Tracker) collectBlackTicketPurchasedActions(raffleDeployedAt int64) err
 		panic(err)
 	}
 
+	userStatusesConditionReached, err := t.storage.GetUserStatusesByConditionsReached()
+	if err != nil {
+		logger.Fatal("black ticket purchased: failed to get user statuses conditions reached", zap.Error(err))
+		panic(err)
+	}
+
+	userStatusesConditionReachedMap := make(map[string]*storage.UserStatus)
+	for _, status := range userStatusesConditionReached {
+		userStatusesConditionReachedMap[status.UserAddress] = status
+	}
+
 	for _, candidateAddressAction := range candidateAddressesActions {
+
+		if _, exists := userStatusesConditionReachedMap[candidateAddressAction.UserAddress]; exists {
+			logger.Debug("skip already condition reached candidate", zap.String("user address", candidateAddressAction.UserAddress))
+			continue
+		}
+
 		logger.Debug("get latest black ticket purchased at")
 		lastBlackTicketPurchasedAt, err := t.storage.GetUserActionTouchByAddress(storage.BlackTicketPurchasedActionType, candidateAddressAction.UserAddress)
 		if err != nil {
@@ -185,29 +202,29 @@ func walkTracesBlackTicketPurchased(trace *tonapi.Trace, callback func(*tonapi.T
 	return transactionLt
 }
 
-func (t *Tracker) processBlackTicketPurchasedTrace(trace *tonapi.Trace, blackTicketCollectionAccountID *ton.AccountID, userAccountID *ton.AccountID) (string, string, string, bool) {
+func (t *Tracker) processBlackTicketPurchasedTrace(trace *tonapi.Trace, blackTicketCollectionAccountID *ton.AccountID, userAccountID *ton.AccountID) (string, string, bool) {
 	nftTransferOpCode := "0x5fcc3d14"
 
 	message, ok := trace.Transaction.GetInMsg().Get()
 	if !ok {
 		logger.Debug("black ticket purchased: missing incoming message... skip")
-		return "", "", "", false
+		return "", "", false
 	}
 
 	if !trace.Transaction.Success {
 		logger.Debug("black ticket purchased: ignore unsuccessful incoming messages... skip")
-		return "", "", "", false
+		return "", "", false
 	}
 
 	if !message.OpCode.IsSet() || message.OpCode.Value != nftTransferOpCode {
 		logger.Debug("black ticket purchased: not NFT transfer op code... skip")
-		return "", "", "", false
+		return "", "", false
 	}
 
 	sourceAccountID, ok := message.Source.Get()
 	if !ok {
 		logger.Debug("black ticket purchased: cannot get message source address... skip")
-		return "", "", "", false
+		return "", "", false
 	}
 	sourceAccount, err := infinityRateLimitRetry(
 		func() (*tonapi.Account, error) {
@@ -216,12 +233,12 @@ func (t *Tracker) processBlackTicketPurchasedTrace(trace *tonapi.Trace, blackTic
 	)
 	if err != nil {
 		logger.Debug("black ticket purchased: cannot get source account info... skip")
-		return "", "", "", false
+		return "", "", false
 	}
 
 	if !slices.Contains(sourceAccount.GetMethods, "get_sale_data") && !slices.Contains(sourceAccount.GetMethods, "get_fix_price_data_v4") {
 		logger.Debug("black ticket purchased: account contract does not provide sale data method... skip")
-		return "", "", "", false
+		return "", "", false
 	}
 
 	var saleDataResult *tonapi.MethodExecutionResult
@@ -241,7 +258,7 @@ func (t *Tracker) processBlackTicketPurchasedTrace(trace *tonapi.Trace, blackTic
 
 	if err != nil {
 		logger.Debug("black ticket purchased: cannot execute get_sale_data method... skip")
-		return "", "", "", false
+		return "", "", false
 	}
 
 	// marketplace address
@@ -249,39 +266,39 @@ func (t *Tracker) processBlackTicketPurchasedTrace(trace *tonapi.Trace, blackTic
 	if slices.Contains(sourceAccount.GetMethods, "get_sale_data") {
 		saleDataMarketplaceAddressCellString, ok = saleDataResult.GetStack()[3].GetCell().Get()
 		if !ok {
-			logger.Debug("black ticket purchased: invalid GetGems get_sale_data output... skip")
-			return "", "", "", false
+			logger.Warn("black ticket purchased: invalid GetGems get_sale_data output... skip")
+			return "", "", false
 		}
 	} else if slices.Contains(sourceAccount.GetMethods, "get_fix_price_data_v4") {
 		saleDataMarketplaceAddressCellString, ok = saleDataResult.GetStack()[2].GetCell().Get()
 		if !ok {
-			logger.Debug("black ticket purchased: invalid GetGems get_sale_data output... skip")
-			return "", "", "", false
+			logger.Warn("black ticket purchased: invalid GetGems get_sale_data output... skip")
+			return "", "", false
 		}
 	}
 
 	saleDataMarketplaceAddressCell, err := boc.DeserializeBocHex(saleDataMarketplaceAddressCellString)
 	if err != nil {
-		logger.Debug("black ticket purchased: failed to deserialize marketplace boc hex... skip")
-		return "", "", "", false
+		logger.Warn("black ticket purchased: failed to deserialize marketplace boc hex... skip")
+		return "", "", false
 	}
 
 	var saleDataMarketplaceAddress tlb.MsgAddress
 	err = tlb.Unmarshal(saleDataMarketplaceAddressCell[0], &saleDataMarketplaceAddress)
 	if err != nil {
-		logger.Debug("black ticket purchased: failed to read marketplace address due to invalid tlb scheme... skip")
-		return "", "", "", false
+		logger.Warn("black ticket purchased: failed to read marketplace address due to invalid tlb scheme... skip")
+		return "", "", false
 	}
 
 	saleDataMarketplaceAccountID, err := tongo.AccountIDFromTlb(saleDataMarketplaceAddress)
 	if saleDataMarketplaceAccountID == nil || err != nil {
-		logger.Debug("black ticket purchased: invalid marketplace address... skip")
-		return "", "", "", false
+		logger.Warn("black ticket purchased: invalid marketplace address... skip")
+		return "", "", false
 	}
 
 	if saleDataMarketplaceAccountID.ToRaw() != MarketplaceAddressRaw {
-		logger.Debug("black ticket purchased: purchase from not getgems marketplace, skip")
-		return "", "", "", false
+		logger.Warn("black ticket purchased: purchase from not getgems marketplace, skip")
+		return "", "", false
 	}
 
 	// owner address
@@ -294,39 +311,39 @@ func (t *Tracker) processBlackTicketPurchasedTrace(trace *tonapi.Trace, blackTic
 
 	saleDataOwnerAddressCellString, ok := saleDataOwnerAddressCellOpt.Get()
 	if !ok {
-		logger.Debug("black ticket purchased: invalid GetGems get_sale_data output... skip")
-		return "", "", "", false
+		logger.Warn("black ticket purchased: invalid GetGems get_sale_data output... skip")
+		return "", "", false
 	}
 
 	saleDataOwnerAddressCell, err := boc.DeserializeBocHex(saleDataOwnerAddressCellString)
 	if err != nil {
-		logger.Debug("black ticket purchased: failed to deserialize marketplace boc hex... skip")
-		return "", "", "", false
+		logger.Warn("black ticket purchased: failed to deserialize marketplace boc hex... skip")
+		return "", "", false
 	}
 
 	var saleDataOwnerAddress tlb.MsgAddress
 	err = tlb.Unmarshal(saleDataOwnerAddressCell[0], &saleDataOwnerAddress)
 	if err != nil {
-		logger.Debug("black ticket purchased: failed to read marketplace address due to invalid tlb scheme... skip")
-		return "", "", "", false
+		logger.Warn("black ticket purchased: failed to read marketplace address due to invalid tlb scheme... skip")
+		return "", "", false
 	}
 
 	saleDataOwnerAccountID, err := tongo.AccountIDFromTlb(saleDataOwnerAddress)
 	if saleDataOwnerAccountID == nil || err != nil {
-		logger.Debug("black ticket purchased: invalid owner address... skip")
-		return "", "", "", false
+		logger.Warn("black ticket purchased: invalid owner address... skip")
+		return "", "", false
 	}
 
 	inMessageDestination, ok := message.Destination.Get()
 	if !ok {
-		logger.Debug("black ticket purchased: destination account address missing... skip")
-		return "", "", "", false
+		logger.Warn("black ticket purchased: destination account address missing... skip")
+		return "", "", false
 	}
 
 	inMessageDestinationAccountID, err := ton.ParseAccountID(inMessageDestination.Address)
 	if err != nil {
-		logger.Debug("black ticket purchased: failed to parse destination account address... skip")
-		return "", "", "", false
+		logger.Warn("black ticket purchased: failed to parse destination account address... skip")
+		return "", "", false
 	}
 
 	itemResult, err := infinityRateLimitRetry(
@@ -338,57 +355,57 @@ func (t *Tracker) processBlackTicketPurchasedTrace(trace *tonapi.Trace, blackTic
 	)
 
 	if err != nil {
-		logger.Debug("black ticket purchased: cannot get nft item information... skip")
-		return "", "", "", false
+		logger.Warn("black ticket purchased: cannot get nft item information... skip")
+		return "", "", false
 	}
 
 	collectionValue, ok := itemResult.GetCollection().Get()
 	if !ok {
-		logger.Debug("black ticket purchased: could not extract item collection value... skip")
-		return "", "", "", false
+		logger.Warn("black ticket purchased: could not extract item collection value... skip")
+		return "", "", false
 	}
 
 	if collectionValue.Address != blackTicketCollectionAccountID.ToRaw() {
-		logger.Debug("black ticket purchased: black ticket collection address not matched... skip")
-		return "", "", "", false
+		logger.Warn("black ticket purchased: black ticket collection address not matched... skip")
+		return "", "", false
 	}
 
 	body, err := boc.DeserializeBocHex(message.GetRawBody().Value)
 	if err != nil {
-		logger.Debug("black ticket purchased: failed to deserialize new owner boc hex... skip")
-		return "", "", "", false
+		logger.Warn("black ticket purchased: failed to deserialize new owner boc hex... skip")
+		return "", "", false
 	}
 
 	bodyCell := body[0]
 	err = bodyCell.Skip(32)
 	if err != nil {
-		logger.Debug("black ticket purchased: failed to skip op code... skip")
-		return "", "", "", false
+		logger.Warn("black ticket purchased: failed to skip op code... skip")
+		return "", "", false
 	}
 
 	err = bodyCell.Skip(64)
 	if err != nil {
-		logger.Debug("black ticket purchased: failed to skip query id... skip")
-		return "", "", "", false
+		logger.Warn("black ticket purchased: failed to skip query id... skip")
+		return "", "", false
 	}
 
 	var newOwnerAddress tlb.MsgAddress
 	err = tlb.Unmarshal(bodyCell, &newOwnerAddress)
 	if err != nil {
-		logger.Debug("black ticket purchased: failed to read new owner address due to invalid tlb scheme... skip")
-		return "", "", "", false
+		logger.Warn("black ticket purchased: failed to read new owner address due to invalid tlb scheme... skip")
+		return "", "", false
 	}
 
 	newOwnerUserAccountID, err := tongo.AccountIDFromTlb(newOwnerAddress)
 	if newOwnerUserAccountID == nil || err != nil || userAccountID.ToRaw() != newOwnerUserAccountID.ToRaw() {
-		logger.Debug("black ticket purchased: invalid new owner account address... skip")
-		return "", "", "", false
+		logger.Warn("black ticket purchased: invalid new owner account address... skip")
+		return "", "", false
 	}
 
 	if saleDataOwnerAccountID.ToRaw() == newOwnerUserAccountID.ToRaw() {
-		logger.Debug("black ticket purchased: it is not purchase, it is sale cancellation, skip")
-		return "", "", "", false
+		logger.Warn("black ticket purchased: it is not purchase, it is sale cancellation, skip")
+		return "", "", false
 	}
 
-	return trace.Transaction.Hash, userAccountID.ToHuman(true, false), inMessageDestinationAccountID.ToHuman(true, false), true
+	return trace.Transaction.Hash, inMessageDestinationAccountID.ToHuman(true, false), true
 }
