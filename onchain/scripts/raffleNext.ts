@@ -2,7 +2,6 @@ import {toNano} from '@ton/core';
 import {NetworkProvider} from '@ton/blueprint';
 
 import {Raffle} from '../wrappers/Raffle';
-import {promptAmount} from "../wrappers/ui-utils";
 
 export async function run(provider: NetworkProvider, args: string[]) {
   const ui = provider.ui();
@@ -14,15 +13,19 @@ export async function run(provider: NetworkProvider, args: string[]) {
     return;
   }
 
-  const amount = await promptAmount('Winning amount', ui);
-
   const raffle = provider.open(Raffle.createFromAddress(address));
 
-  await raffle.sendRaffleNext(provider.sender(), {
-    value: amount + toNano("0.05"),
-    forwardAmount: amount,
-    message: "Congrats! You are winner!"
-  });
+  for (let i = 0; i < 25; i++) {
+    ui.write("sending raffle next message");
+
+    await raffle.sendRaffleNext(provider.sender(), {
+      value: toNano("0.01") + toNano("0.05"),
+      forwardAmount: toNano("0.01"),
+      message: "Congrats! You are winner!"
+    });
+
+    await new Promise(resolve => setTimeout(resolve, 3000));
+  }
 
   ui.clearActionPrompt();
   ui.write("New user condition was pushed into blockchain");
